@@ -1,9 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from 'dotenv';
+import { saveMessage, getRecentMessages } from './db.js';
+import { handleChat } from './chat.js';
 import { v4 as uuidv4 } from 'uuid';
-import { handleChat } from './chat.js'; // שימוש נכון
-import { saveMessage } from './db.js';
 
 config();
 const app = express();
@@ -15,14 +15,11 @@ app.post('/chat', async (req, res) => {
   if (!message || message.trim() === '') {
     return res.status(400).json({ error: 'Empty message' });
   }
-
   const sessionId = session_id || uuidv4();
-
+  const history = await getRecentMessages(sessionId);
   const response = await handleChat(sessionId, message);
-
   await saveMessage(sessionId, message, 'user');
   await saveMessage(sessionId, response, 'bot');
-
   res.json({ response, session_id: sessionId });
 });
 
