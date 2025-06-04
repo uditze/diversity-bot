@@ -35,19 +35,22 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white flex flex-col font-sans">
-      <header className="text-center text-xl sm:text-2xl font-semibold py-4 border-b border-gray-300 bg-white sticky top-0 z-10 shadow-sm dark:bg-gray-800">
+    <div className="min-h-screen bg-white text-gray-900 flex flex-col items-center font-sans text-xl leading-relaxed">
+      <header className="w-full text-center text-3xl font-bold py-6 border-b border-gray-300 bg-blue-50 shadow sticky top-0 z-10">
         אלברט – בוט לקידום כשירות תרבותית בהוראה
       </header>
 
-      <main className="flex-1 flex justify-center">
-        <div className="w-full max-w-2xl p-4 space-y-4">
+      <main className="flex-1 w-full flex justify-center items-start px-4 pt-10">
+        <div className="w-full max-w-3xl flex flex-col space-y-10">
           {messages.map((msg, i) => (
             <div
               key={i}
-              className={\`max-w-prose px-4 py-3 rounded-xl shadow-sm whitespace-pre-line leading-relaxed \${msg.sender === 'user'
-                ? 'bg-blue-100 self-end font-sans text-gray-900'
-                : 'bg-gray-200 self-start font-serif text-gray-800 mt-6'}\`}
+              className={
+                'px-5 py-4 rounded-xl whitespace-pre-line break-words shadow-sm ' +
+                (msg.sender === 'user'
+                  ? 'bg-blue-100 self-end font-sans text-right text-gray-900'
+                  : 'bg-gray-200 self-start font-serif text-right text-gray-800')
+              }
             >
               {msg.text}
             </div>
@@ -56,13 +59,13 @@ export default function App() {
         </div>
       </main>
 
-      <footer className="p-4 bg-white dark:bg-gray-800 border-t border-gray-300">
-        <div className="max-w-2xl mx-auto flex gap-2">
+      <footer className="w-full py-8 bg-blue-50 border-t border-gray-200">
+        <div className="max-w-3xl mx-auto flex flex-col items-center gap-4">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             rows={1}
-            className="flex-1 resize-none rounded-xl border border-gray-400 p-3 text-base focus:outline-none focus:ring focus:ring-blue-300"
+            className="w-full min-h-[56px] max-h-[300px] resize-y rounded-xl border border-gray-400 p-4 text-xl focus:outline-none focus:ring focus:ring-blue-300"
             placeholder="כתוב כאן..."
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -73,7 +76,7 @@ export default function App() {
           />
           <button
             onClick={sendMessage}
-            className="bg-blue-500 text-white px-5 py-3 rounded-xl hover:bg-blue-600"
+            className="bg-blue-600 text-white px-8 py-3 rounded-xl hover:bg-blue-700 text-xl"
           >
             שלח
           </button>
