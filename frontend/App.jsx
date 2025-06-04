@@ -1,4 +1,3 @@
-import React from 'react';
 import { useState, useEffect, useRef } from 'react';
 
 export default function App() {
@@ -31,34 +30,54 @@ export default function App() {
     });
 
     const data = await res.json();
-    setMessages(prev => [...prev, { sender: 'user', text: userMessage }, { sender: 'bot', text: data.response }]);
+    setMessages(prev => [...prev, { sender: 'bot', text: data.response }]);
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 flex flex-col">
-      <div className="flex-1 overflow-y-auto space-y-2">
-        {messages.map((msg, i) => (
-          <div key={i} className={`max-w-xl px-4 py-2 rounded-2xl ${msg.sender === 'user' ? 'bg-blue-200 self-end' : 'bg-gray-300 self-start'}`}>
-            {msg.text}
-          </div>
-        ))}
-        <div ref={bottomRef} />
-      </div>
-      <div className="mt-4 flex">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          className="flex-1 p-2 rounded-l-2xl border border-gray-400 dark:border-gray-600"
-          placeholder="כתוב כאן..."
-        />
-        <button
-          onClick={sendMessage}
-          className="bg-blue-500 text-white px-4 rounded-r-2xl hover:bg-blue-600"
-        >
-          שלח
-        </button>
-      </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white flex flex-col font-sans">
+      <header className="text-center text-xl sm:text-2xl font-semibold py-4 border-b border-gray-300 bg-white sticky top-0 z-10 shadow-sm dark:bg-gray-800">
+        אלברט – בוט לקידום כשירות תרבותית בהוראה
+      </header>
+
+      <main className="flex-1 flex justify-center">
+        <div className="w-full max-w-2xl p-4 space-y-4">
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              className={\`max-w-prose px-4 py-3 rounded-xl shadow-sm whitespace-pre-line leading-relaxed \${msg.sender === 'user'
+                ? 'bg-blue-100 self-end font-sans text-gray-900'
+                : 'bg-gray-200 self-start font-serif text-gray-800 mt-6'}\`}
+            >
+              {msg.text}
+            </div>
+          ))}
+          <div ref={bottomRef} />
+        </div>
+      </main>
+
+      <footer className="p-4 bg-white dark:bg-gray-800 border-t border-gray-300">
+        <div className="max-w-2xl mx-auto flex gap-2">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            rows={1}
+            className="flex-1 resize-none rounded-xl border border-gray-400 p-3 text-base focus:outline-none focus:ring focus:ring-blue-300"
+            placeholder="כתוב כאן..."
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
+          />
+          <button
+            onClick={sendMessage}
+            className="bg-blue-500 text-white px-5 py-3 rounded-xl hover:bg-blue-600"
+          >
+            שלח
+          </button>
+        </div>
+      </footer>
     </div>
   );
 }
