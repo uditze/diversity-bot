@@ -44,9 +44,12 @@ export default function App() {
           {messages.map((msg, i) => (
             <div
               key={i}
-              className={\`max-w-prose px-4 py-3 rounded-xl shadow-sm whitespace-pre-line leading-relaxed \${msg.sender === 'user'
-                ? 'bg-blue-100 self-end font-sans text-gray-900'
-                : 'bg-gray-200 self-start font-serif text-gray-800 mt-6'}\`}
+              className={
+                'max-w-prose px-4 py-3 rounded-xl shadow-sm whitespace-pre-line leading-relaxed ' +
+                (msg.sender === 'user'
+                  ? 'bg-blue-100 self-end font-sans text-gray-900'
+                  : 'bg-gray-200 self-start font-serif text-gray-800 mt-6')
+              }
             >
               {msg.text}
             </div>
