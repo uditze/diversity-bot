@@ -23,7 +23,7 @@ export default function App() {
     setMessages(prev => [...prev, { sender: 'user', text: userMessage }]);
     setInput('');
 
-    const res = await fetch('http://localhost:3001/chat', {
+    const res = await fetch('https://diversity-bot-jy5a.onrender.com/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: userMessage, session_id: sessionId }),
