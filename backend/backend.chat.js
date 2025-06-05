@@ -7,6 +7,15 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const MAX_INTERACTIONS_PER_SCENARIO = 3;
 const sessions = {};
+const TOTAL_SCENARIOS = scenarios.he.length;
+
+function getScenarioText(session) {
+  const langScenarios = scenarios[session.language];
+  if (langScenarios && langScenarios[session.scenarioIndex]) {
+    return langScenarios[session.scenarioIndex].text;
+  }
+  return scenarios.he[session.scenarioIndex].text;
+}
 
 export async function handleChat(sessionId, message) {
   if (!sessions[sessionId]) {
@@ -37,14 +46,14 @@ Want to chat in English? Just type a word!
     if (message.includes('זכר')) session.gender = 'male';
     else if (message.includes('נקבה')) session.gender = 'female';
     else session.gender = 'neutral';
-    return scenarios[0].text;
+    return getScenarioText({ ...session, scenarioIndex: 0 });
   }
 
   if (message.trim().includes('עבור לתרחיש הבא') || message.trim().toLowerCase().includes('next')) {
-    if (session.scenarioIndex < scenarios.length - 1) {
+    if (session.scenarioIndex < TOTAL_SCENARIOS - 1) {
       session.scenarioIndex++;
       session.interactions = 0;
-      return scenarios[session.scenarioIndex].text;
+      return getScenarioText(session);
     } else {
       return session.language === 'ar' ? 'لقد أنهيت جميع السيناريوهات. شكراً لمشاركتك!' :
              session.language === 'en' ? 'You have completed all scenarios. Thank you for participating!' :
@@ -53,10 +62,10 @@ Want to chat in English? Just type a word!
   }
 
   if (/^(כן|yes|sure|ok|okay|نعم|أجل|ايوا)/i.test(message.trim())) {
-    if (session.scenarioIndex < scenarios.length - 1) {
+    if (session.scenarioIndex < TOTAL_SCENARIOS - 1) {
       session.scenarioIndex++;
       session.interactions = 0;
-      return scenarios[session.scenarioIndex].text;
+      return getScenarioText(session);
     } else {
       return session.language === 'ar' ? 'لقد أنهيت جميع السيناريوهات. شكراً لمشاركتك!' :
              session.language === 'en' ? 'You have completed all scenarios. Thank you for participating!' :
