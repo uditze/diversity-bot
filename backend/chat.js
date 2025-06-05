@@ -30,3 +30,4 @@ export const scenarios = [
 איך לדעתך המרצה צריך לנהוג?`
   }
 ];
+export { handleChat };
