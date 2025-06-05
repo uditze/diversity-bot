@@ -14,8 +14,7 @@ export async function handleChat(sessionId, message) {
       scenarioIndex: 0,
       interactions: 0,
       language: null,
-      gender: null,
-      initialized: false
+      gender: null
     };
 
     return `אני בוט שמסייע למרצות ולמרצים לפתח את הכשירות התרבותית שלהם בהוראה באקדמיה. אני אציג בפניך מספר תרחישים מהכיתה. עליך לחשוב כיצד תתמודד עם התרחיש. המטרה של השיח על התרחישים היא לא לתת "תשובות נכונות", אלא לקדם את המודעות להיבטים של מגוון בהוראה.
