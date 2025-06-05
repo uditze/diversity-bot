@@ -62,9 +62,14 @@ Want to chat in English? Just type a word!
   }
 
   if (!session.gender) {
-    if (message.includes('זכר')) session.gender = 'male';
-    else if (message.includes('נקבה')) session.gender = 'female';
-    else session.gender = 'neutral';
+    const genderMsg = message.toLowerCase();
+    if (genderMsg.includes('זכר') || genderMsg.includes('male') || genderMsg.includes('ذكر')) {
+      session.gender = 'male';
+    } else if (genderMsg.includes('נקבה') || genderMsg.includes('female') || genderMsg.includes('أنثى')) {
+      session.gender = 'female';
+    } else {
+      session.gender = 'neutral';
+    }
     return await getScenarioText(0, session.language);
   }
 
