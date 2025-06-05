@@ -52,6 +52,18 @@ Want to chat in English? Just type a word!
     }
   }
 
+  if (/^(כן|yes|sure|ok|okay|نعم|أجل|ايوا)/i.test(message.trim())) {
+    if (session.scenarioIndex < scenarios.length - 1) {
+      session.scenarioIndex++;
+      session.interactions = 0;
+      return scenarios[session.scenarioIndex].text;
+    } else {
+      return session.language === 'ar' ? 'لقد أنهيت جميع السيناريوهات. شكراً لمشاركتك!' :
+             session.language === 'en' ? 'You have completed all scenarios. Thank you for participating!' :
+             'סיימנו את כל התרחישים. תודה שהשתתפת!';
+    }
+  }
+
   if (message.trim().toLowerCase() === 'לא' || message.trim().toLowerCase() === 'no') {
     return session.language === 'ar' ? 'يسعدني الاستمرار بالنقاش. ما رأيك؟' :
            session.language === 'en' ? 'Let’s keep discussing. What do you think?' :
