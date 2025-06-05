@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { config } from 'dotenv';
 import { saveMessage, getRecentMessages } from './db.js';
-import { handleChat } from './chat.js';
+import { handleChat } from './backend.chat.js';
 import { v4 as uuidv4 } from 'uuid';
 
 config();
