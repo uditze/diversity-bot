@@ -5,23 +5,40 @@ import { scenarios } from './chat.js';
 config();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+async function translateText(text, lang) {
+  if (['he', 'en', 'ar'].includes(lang)) return text;
+  const res = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [
+      { role: 'system', content: `Translate the following text to ${lang}` },
+      { role: 'user', content: text }
+    ],
+    temperature: 0.3,
+    max_tokens: 500
+  });
+  return res.choices[0].message.content.trim();
+}
+
 const MAX_INTERACTIONS_PER_SCENARIO = 3;
 const sessions = {};
 
 export async function handleChat(sessionId, message) {
   if (!sessions[sessionId]) {
+    const lang = /[؀-ۿ]/.test(message) ? 'ar' :
+                 /[a-zA-Z]/.test(message) ? 'en' : 'he';
     sessions[sessionId] = {
       scenarioIndex: 0,
       interactions: 0,
-      language: null,
+      language: lang,
       gender: null
     };
 
-    return `אני בוט שמסייע למרצות ולמרצים לפתח את הכשירות התרבותית שלהם בהוראה באקדמיה. אני אציג בפניך מספר תרחישים מהכיתה. עליך לחשוב כיצד תתמודד עם התרחיש. המטרה של השיח על התרחישים היא לא לתת "תשובות נכונות", אלא לקדם את המודעות להיבטים של מגוון בהוראה.
+    const greeting = `אני בוט שמסייע למרצות ולמרצים לפתח את הכשירות התרבותית שלהם בהוראה באקדמיה. אני אציג בפניך מספר תרחישים מהכיתה. עליך לחשוב כיצד תתמודד עם התרחיש. המטרה של השיח על התרחישים היא לא לתת "תשובות נכונות", אלא לקדם את המודעות להיבטים של מגוון בהוראה.
 
 האם תרצה שאפנה אליך בלשון זכר או נקבה?
 Want to chat in English? Just type a word!
 بدك نحكي بالعربية؟ بس اكتب كلمة!`;
+    return await translateText(greeting, lang);
   }
 
   const session = sessions[sessionId];
