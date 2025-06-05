@@ -4,10 +4,20 @@ import { useState, useEffect, useRef } from 'react';
 export default function App() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
+  const [language, setLanguage] = useState('rtl');
   const [sessionId, setSessionId] = useState(() => {
     return localStorage.getItem('session_id') || crypto.randomUUID();
   });
   const bottomRef = useRef(null);
+
+  const detectLanguage = (text) => {
+    const hasEnglish = /[A-Za-z]/.test(text);
+    const hasRTL = /[\u0590-\u05FF\u0600-\u06FF]/.test(text);
+    if (hasEnglish && !hasRTL) {
+      return 'en';
+    }
+    return 'rtl';
+  };
 
   useEffect(() => {
     localStorage.setItem('session_id', sessionId);
@@ -21,6 +31,7 @@ export default function App() {
     if (!input.trim()) return;
 
     const userMessage = input;
+    setLanguage(detectLanguage(userMessage));
     setMessages(prev => [...prev, { sender: 'user', text: userMessage }]);
     setInput('');
 
@@ -35,7 +46,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col items-center font-sans text-xl leading-relaxed">
+    <div
+      className="min-h-screen bg-white text-gray-900 flex flex-col items-center font-sans text-xl leading-relaxed"
+      dir={language === 'en' ? 'ltr' : 'rtl'}
+    >
       <header className="w-full text-center text-3xl font-bold py-6 border-b border-gray-300 bg-blue-50 shadow sticky top-0 z-10">
         אלברט – בוט לקידום כשירות תרבותית בהוראה
       </header>
@@ -46,7 +60,8 @@ export default function App() {
             <div
               key={i}
               className={
-                'px-5 py-4 rounded-xl whitespace-pre-line break-words shadow-sm text-right ' +
+                'px-5 py-4 rounded-xl whitespace-pre-line break-words shadow-sm ' +
+                (language === 'en' ? 'text-left ' : 'text-right ') +
                 (msg.sender === 'user'
                   ? 'bg-blue-100 self-end font-sans text-gray-900'
                   : 'bg-gray-200 self-start font-serif text-gray-800')
@@ -65,7 +80,10 @@ export default function App() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             rows={1}
-            className="w-full min-h-[60px] max-h-[300px] resize-y rounded-xl border border-gray-400 p-4 text-xl focus:outline-none focus:ring focus:ring-blue-300 text-right"
+            className={
+              'w-full min-h-[60px] max-h-[300px] resize-y rounded-xl border border-gray-400 p-4 text-xl focus:outline-none focus:ring focus:ring-blue-300 ' +
+              (language === 'en' ? 'text-left' : 'text-right')
+            }
             placeholder="כתוב כאן..."
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
