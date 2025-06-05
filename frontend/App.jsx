@@ -1,6 +1,12 @@
 import React from 'react';
 import { useState, useEffect, useRef } from 'react';
 
+const INTRO_MESSAGE = `אני בוט שמסייע למרצות ולמרצים לפתח את הכשירות התרבותית שלהם בהוראה באקדמיה. אני אציג בפניך מספר תרחישים מהכיתה. עליך לחשוב כיצד תתמודד עם התרחיש. המטרה של השיח על התרחישים היא לא לתת "תשובות נכונות", אלא לקדם את המודעות להיבטים של מגוון בהוראה.
+
+האם תרצה שאפנה אליך בלשון זכר או נקבה?
+Want to chat in English? Just type a word!
+بدك نحكي بالعربية؟ بس اكتب كلمة!`;
+
 export default function App() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -12,6 +18,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('session_id', sessionId);
   }, [sessionId]);
+
+  useEffect(() => {
+    setMessages([{ sender: 'bot', text: INTRO_MESSAGE }]);
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
