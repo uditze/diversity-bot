@@ -11,6 +11,18 @@ export async function saveMessage(session_id, message, sender) {
   if (error) console.error('Error saving message:', error.message);
 }
 
+export async function getMessageCount(session_id) {
+  const { count, error } = await supabase
+    .from('chat_logs')
+    .select('*', { count: 'exact', head: true })
+    .eq('session_id', session_id);
+  if (error) {
+    console.error('Error counting messages:', error.message);
+    return 0;
+  }
+  return count || 0;
+}
+
 export async function getRecentMessages(session_id, limit = 3) {
   const { data, error } = await supabase
     .from('chat_logs')
