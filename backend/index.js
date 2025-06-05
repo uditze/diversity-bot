@@ -11,15 +11,21 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/chat', async (req, res) => {
-  const { message, session_id } = req.body;
-  if (!message || message.trim() === '') {
-    return res.status(400).json({ error: 'Empty message' });
+  try {
+    const { message = '', session_id, init } = req.body;
+    const sessionId = session_id || uuidv4();
+
+    if (message.trim()) {
+      await saveMessage(sessionId, message, 'user');
+    }
+
+    const response = await handleChat(sessionId, message, { init });
+    await saveMessage(sessionId, response, 'bot');
+    res.json({ response, session_id: sessionId });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
-  const sessionId = session_id || uuidv4();
-  const response = await handleChat(sessionId, message);
-  await saveMessage(sessionId, message, 'user');
-  await saveMessage(sessionId, response, 'bot');
-  res.json({ response, session_id: sessionId });
 });
 
 const PORT = process.env.PORT || 3001;
