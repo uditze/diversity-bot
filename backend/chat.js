@@ -1,3 +1,5 @@
+import { handleChat } from './backend.chat.js';
+
 export const scenarios = [
   {
     id: 1,
