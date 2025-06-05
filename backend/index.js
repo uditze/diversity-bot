@@ -11,10 +11,10 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/chat', async (req, res) => {
-  try {
-    const { message = '', session_id, init } = req.body;
-    const sessionId = session_id || uuidv4();
+  const { message = '', session_id, init } = req.body;
+  const sessionId = session_id || uuidv4();
 
+  try {
     if (message.trim()) {
       await saveMessage(sessionId, message, 'user');
     }
@@ -24,7 +24,7 @@ app.post('/chat', async (req, res) => {
     res.json({ response, session_id: sessionId });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    res.json({ response: 'Sorry, something went wrong.', session_id: sessionId });
   }
 });
 

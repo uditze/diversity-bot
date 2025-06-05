@@ -18,12 +18,18 @@ export default function ChatWindow() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ init: true, session_id: sessionId })
     })
-      .then(r => r.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Server returned error ' + res.status);
+        return res.json();
+      })
       .then(data => {
         setMessages([{ sender: 'bot', text: data.response }]);
         setLang(detectLanguage(data.response));
       })
-      .catch(console.error);
+      .catch(err => {
+        console.error(err);
+        setMessages([{ sender: 'bot', text: 'Sorry, something went wrong.' }]);
+      });
   }, [sessionId]);
 
   useEffect(() => {
@@ -54,11 +60,20 @@ export default function ChatWindow() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMessage, session_id: sessionId })
       });
-      const data = await res.json();
+      if (!res.ok) throw new Error('Server returned error ' + res.status);
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        console.error('JSON parse error:', e);
+        setMessages(prev => [...prev, { sender: 'bot', text: 'Sorry, something went wrong.' }]);
+        return;
+      }
       setMessages((prev) => [...prev, { sender: 'bot', text: data.response }]);
       setLang(detectLanguage(data.response));
     } catch (err) {
       console.error(err);
+      setMessages(prev => [...prev, { sender: 'bot', text: 'Sorry, something went wrong.' }]);
     }
   };
 
