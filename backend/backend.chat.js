@@ -8,6 +8,28 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const MAX_INTERACTIONS_PER_SCENARIO = 3;
 const sessions = {};
 
+function normalize(text) {
+  return text.trim().toLowerCase();
+}
+
+export function isAffirmative(text) {
+  const t = normalize(text);
+  const words = [
+    'כן', 'yes', 'y', 'sure', 'ok', 'okay', 'next',
+    'בטח', 'נכון', 'نعم', 'أجل', 'ايوا', 'تمام', 'طيب', 'حسنا'
+  ];
+  return words.some((w) => t.startsWith(w));
+}
+
+export function isNegative(text) {
+  const t = normalize(text);
+  const words = [
+    'לא', 'no', 'nope', 'nah',
+    'لا', 'كلا', 'مش', 'مو', 'ليس'
+  ];
+  return words.some((w) => t.startsWith(w));
+}
+
 export async function handleChat(sessionId, message) {
   if (!sessions[sessionId]) {
     sessions[sessionId] = {
@@ -40,7 +62,7 @@ Want to chat in English? Just type a word!
     return scenarios[0].text;
   }
 
-  if (message.trim().includes('עבור לתרחיש הבא') || message.trim().toLowerCase().includes('next')) {
+  if (isAffirmative(message)) {
     if (session.scenarioIndex < scenarios.length - 1) {
       session.scenarioIndex++;
       session.interactions = 0;
@@ -52,7 +74,7 @@ Want to chat in English? Just type a word!
     }
   }
 
-  if (message.trim().toLowerCase() === 'לא' || message.trim().toLowerCase() === 'no') {
+  if (isNegative(message)) {
     return session.language === 'ar' ? 'يسعدني الاستمرار بالنقاش. ما رأيك؟' :
            session.language === 'en' ? 'Let’s keep discussing. What do you think?' :
            'נשמח להעמיק עוד. מה לדעתך חשוב שהמרצה יעשה במצב כזה?';
@@ -61,9 +83,11 @@ Want to chat in English? Just type a word!
   session.interactions++;
 
   if (session.interactions >= MAX_INTERACTIONS_PER_SCENARIO) {
-    return session.language === 'ar' ? 'هل ترغب بالانتقال إلى السيناريو التالي؟ اكتب: "التالي"' :
-           session.language === 'en' ? 'Would you like to continue to the next scenario? Type: "next"' :
-           'רוצה לעבור לתרחיש הבא? כתוב/כתבי: "עבור לתרחיש הבא".';
+    return session.language === 'ar' ?
+           'هل تريد الانتقال إلى السيناريو التالي؟ أي إجابة إيجابية ستنقلك، إجابة سلبية ستبقيك في النقاش.' :
+           session.language === 'en' ?
+           'Would you like to move to the next scenario? Any affirmative answer will advance you, a negative answer will keep the discussion going.' :
+           'רוצה לעבור לתרחיש הבא? כל תשובה חיובית תעביר אותך, תשובה שלילית תשאיר אותך בדיון.';
   }
 
   const langPrompt = session.language === 'ar' ?
