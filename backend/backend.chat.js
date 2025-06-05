@@ -1,6 +1,6 @@
 import { config } from 'dotenv';
 import OpenAI from 'openai';
-import { scenarios } from './chat.js';
+import { scenarios } from './scenarios.js';
 
 config();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
