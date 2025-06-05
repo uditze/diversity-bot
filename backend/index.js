@@ -11,9 +11,9 @@ app.use(cors());
 app.use(express.json());
 
 app.post('/chat', async (req, res) => {
+  const { message = '', session_id, init } = req.body;
+  const sessionId = session_id || uuidv4();
   try {
-    const { message = '', session_id, init } = req.body;
-    const sessionId = session_id || uuidv4();
 
     if (message.trim()) {
       await saveMessage(sessionId, message, 'user');
@@ -21,10 +21,10 @@ app.post('/chat', async (req, res) => {
 
     const response = await handleChat(sessionId, message, { init });
     await saveMessage(sessionId, response, 'bot');
-    res.json({ response, session_id: sessionId });
+    return res.json({ response, session_id: sessionId });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    return res.json({ response: 'Sorry, something went wrong.', session_id: sessionId });
   }
 });
 
