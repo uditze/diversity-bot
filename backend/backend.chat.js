@@ -5,6 +5,8 @@ import { scenarios } from './chat.js';
 config();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+const translationCache = {};
+
 async function translateText(text, lang) {
   if (['he', 'en', 'ar'].includes(lang)) return text;
   const res = await openai.chat.completions.create({
@@ -17,6 +19,16 @@ async function translateText(text, lang) {
     max_tokens: 500
   });
   return res.choices[0].message.content.trim();
+}
+
+async function getScenarioText(index, lang) {
+  const baseText = scenarios[index].text;
+  if (lang === 'he') return baseText;
+  if (!translationCache[lang]) translationCache[lang] = {};
+  if (translationCache[lang][index]) return translationCache[lang][index];
+  const translated = await translateText(baseText, lang);
+  translationCache[lang][index] = translated;
+  return translated;
 }
 
 const MAX_INTERACTIONS_PER_SCENARIO = 3;
@@ -53,14 +65,14 @@ Want to chat in English? Just type a word!
     if (message.includes('זכר')) session.gender = 'male';
     else if (message.includes('נקבה')) session.gender = 'female';
     else session.gender = 'neutral';
-    return scenarios[0].text;
+    return await getScenarioText(0, session.language);
   }
 
   if (message.trim().includes('עבור לתרחיש הבא') || message.trim().toLowerCase().includes('next')) {
     if (session.scenarioIndex < scenarios.length - 1) {
       session.scenarioIndex++;
       session.interactions = 0;
-      return scenarios[session.scenarioIndex].text;
+      return await getScenarioText(session.scenarioIndex, session.language);
     } else {
       return session.language === 'ar' ? 'لقد أنهيت جميع السيناريوهات. شكراً لمشاركتك!' :
              session.language === 'en' ? 'You have completed all scenarios. Thank you for participating!' :
@@ -72,7 +84,7 @@ Want to chat in English? Just type a word!
     if (session.scenarioIndex < scenarios.length - 1) {
       session.scenarioIndex++;
       session.interactions = 0;
-      return scenarios[session.scenarioIndex].text;
+      return await getScenarioText(session.scenarioIndex, session.language);
     } else {
       return session.language === 'ar' ? 'لقد أنهيت جميع السيناريوهات. شكراً لمشاركتك!' :
              session.language === 'en' ? 'You have completed all scenarios. Thank you for participating!' :
