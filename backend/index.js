@@ -10,7 +10,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_ASSISTANT_ID = process.env.OPENAI_ASSISTANT_ID;
+
+if (!OPENAI_API_KEY) {
+  console.error('OPENAI_API_KEY environment variable is missing');
+}
+if (!OPENAI_ASSISTANT_ID) {
+  console.error('OPENAI_ASSISTANT_ID environment variable is missing');
+}
+
+const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
 
 // load scenarios from local txt file
 const scenariosFile = new URL('./scenarios/albert_scenarios_multilingual.txt', import.meta.url);
@@ -38,11 +48,18 @@ function nextSessionId() {
   return Math.random().toString(36).slice(2);
 }
 
-const assistantId = process.env.ASSISTANT_ID;
+const assistantId = OPENAI_ASSISTANT_ID;
 
 app.post('/chat', async (req, res) => {
   let { message, session_id } = req.body;
-  if (!message) return res.status(400).json({ error: 'Missing message' });
+  if (!message) {
+    return res.status(400).json({ response: 'Missing message', session_id });
+  }
+
+  if (!openai || !assistantId) {
+    console.error('Required OpenAI configuration is missing');
+    return res.status(500).json({ response: 'Server misconfiguration', session_id });
+  }
 
   // create new session if needed
   if (!session_id || !sessions[session_id]) {
