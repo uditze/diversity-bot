@@ -1,51 +1,40 @@
-# Albert Diversity Bot
+# AI Chat Starter
 
-This repository contains **Albert**, a multilingual chatbot that helps university lecturers reflect on classroom diversity scenarios. The project is split into a React frontend and an Express backend that communicates with the OpenAI API and stores chat logs in Supabase.
-
-## Project structure
+This repository is a simple example of a full‑stack project using GPT‑4o.
+It contains a minimal Express backend and a small React frontend.
 
 ```
-/backend   Node.js + Express server
-/frontend  React app (Vite + Tailwind)
+/backend   Node.js server exposing `/api/chat`
+/frontend  React application built with Vite
 ```
 
 ## Setup
 
-1. **Clone the repository** and install dependencies in both `frontend` and `backend`:
+1. Install dependencies for each part:
 
 ```bash
-npm install        # run in ./backend
-npm install        # run in ./frontend
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
-2. **Environment variables** – copy `backend/env.example` to `backend/.env` and fill in your Supabase and OpenAI keys.
-
-```
-cp backend/env.example backend/.env
-```
-
-3. **Run locally**
+2. Copy environment variables and provide your OpenAI key:
 
 ```bash
-# Terminal 1
+cp ../backend/env.example ../backend/.env
+# edit backend/.env and set OPENAI_API_KEY
+```
+
+3. Start both services for development:
+
+```bash
 cd backend && npm start
-
-# Terminal 2
+# in a second terminal
 cd frontend && npm run dev
 ```
 
-The frontend will send requests to `/chat`. Adjust the proxy or full URL when deploying on Render.
+The frontend will send requests to `http://localhost:3001/api/chat` by default.
 
-## Deployment
+## Deploy
 
-- Deploy the **backend** on Render as a Node service. Make sure the `.env` variables are configured in Render's dashboard.
-- Deploy the **frontend** as a separate static site on Render. Point the API requests to the backend URL.
-- Supabase should already contain a table named `chat_logs` with columns `session_id`, `message`, `sender` and automatic `timestamp`.
-
-## Usage
-
-1. Navigate to the deployed frontend.
-2. A welcome message from Albert appears first.
-3. Type any message to receive the first scenario. Reply in Hebrew, Arabic or English. Albert will continue the conversation in the detected language and store messages in Supabase.
-
-Each answer from Albert is a short question designed to deepen reflection on the scenario. Use `"next"` (or "עבור לתרחיש הבא" / "التالي") to move forward.
+Deploy the backend and frontend on your preferred platform as two separate services.
+Remember to set the `OPENAI_API_KEY` environment variable in the backend.

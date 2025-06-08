@@ -1,32 +1,32 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from 'dotenv';
-import { saveMessage } from './db.js';
-import { handleChat } from './chat.js';
-import { v4 as uuidv4 } from 'uuid';
+import { OpenAI } from 'openai';
 
 config();
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.post('/chat', async (req, res) => {
-  const { message = '', session_id, init } = req.body;
-  const sessionId = session_id || uuidv4();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+app.post('/api/chat', async (req, res) => {
+  const { message } = req.body;
+  if (!message) return res.status(400).json({ error: 'Missing message' });
   try {
-
-    if (message.trim()) {
-      await saveMessage(sessionId, message, 'user');
-    }
-
-    const response = await handleChat(sessionId, message, { init });
-    await saveMessage(sessionId, response, 'bot');
-    return res.json({ response, session_id: sessionId });
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [{ role: 'user', content: message }],
+      temperature: 0.7,
+      max_tokens: 200
+    });
+    res.json({ response: completion.choices[0].message.content.trim() });
   } catch (err) {
     console.error(err);
-    return res.json({ response: 'Sorry, something went wrong.', session_id: sessionId });
+    res.status(500).json({ error: 'Failed to generate response' });
   }
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server listening on port ${PORT}`));
