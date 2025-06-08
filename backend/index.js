@@ -110,10 +110,13 @@ app.post('/chat', async (req, res) => {
       session.scenarioIndex = (session.scenarioIndex + 1) % scenarioList.length;
     }
 
-    res.json({ response: assistantMsg.trim(), session_id });
+    return res.json({ response: assistantMsg.trim(), session_id });
   } catch (err) {
     console.error("❌ Chat error:", err);
-    res.status(500).json({ response: `Internal error: ${err.message}`, session_id });
+    return res.status(500).json({
+      response: "Internal error: " + err.message,
+      session_id,
+    });
   }
 });
 
