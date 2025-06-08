@@ -26,13 +26,7 @@ const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
 const scenariosFile = './albert_scenarios_multilingual.txt';
 const scenarios = {};
 let currentLang = 'en';
-let scenarioContent = '';
-try {
-  scenarioContent = fs.readFileSync(scenariosFile, 'utf8');
-} catch {
-  console.error('❌ Scenarios file not found:', scenariosFile);
-}
-for (const line of scenarioContent.split(/\r?\n/)) {
+for (const line of fs.readFileSync(scenariosFile, 'utf8').split(/\r?\n/)) {
   if (line.startsWith('[') && line.endsWith(']')) {
     currentLang = line.slice(1, -1);
     scenarios[currentLang] = [];
@@ -95,9 +89,9 @@ app.post('/chat', async (req, res) => {
 
     const scenarioList = scenarios[session.lang] || scenarios['en'] || [];
     const scenarioText = scenarioList[session.scenarioIndex] || '';
-    if (!scenarioText) {
-      console.warn('⚠️ Empty scenarioText – assistant will get no instructions.');
-    }
+if (!scenarioText) {
+  console.warn('⚠️ Empty scenarioText being sent to assistant.');
+}
 
     const run = await openai.beta.threads.runs.create(session.threadId, {
       assistant_id: assistantId,
@@ -113,7 +107,7 @@ app.post('/chat', async (req, res) => {
       status = rStatus.status;
     }
     if (status !== 'completed') {
-      throw new Error('Run failed or timed out');
+      throw new Error('❌ Assistant run failed or timed out');
     }
 
     const list = await openai.beta.threads.messages.list(session.threadId, { limit: 1 });
