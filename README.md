@@ -22,7 +22,7 @@ cd ../frontend && npm install
 
 ```bash
 cp ../backend/env.example ../backend/.env
-# edit backend/.env and set OPENAI_API_KEY and ASSISTANT_ID
+# edit backend/.env and set OPENAI_API_KEY and OPENAI_ASSISTANT_ID
 ```
 
 3. Start both services for development:
@@ -38,4 +38,4 @@ The frontend will send requests to `http://localhost:3001/chat` by default.
 ## Deploy
 
 Deploy the backend and frontend on your preferred platform as two separate services.
-Remember to set the `OPENAI_API_KEY` and `ASSISTANT_ID` environment variables in the backend.
+Remember to set the `OPENAI_API_KEY` and `OPENAI_ASSISTANT_ID` environment variables in the backend.
