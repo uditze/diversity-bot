@@ -8,7 +8,7 @@ config();
 
 const app = express();
 app.use(cors());
-app.use(express.json();
+app.use(express.json());
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_ASSISTANT_ID = process.env.OPENAI_ASSISTANT_ID;
