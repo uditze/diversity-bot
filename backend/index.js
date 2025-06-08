@@ -111,11 +111,9 @@ app.post('/chat', async (req, res) => {
     }
 
     res.json({ response: assistantMsg.trim(), session_id });
-      } catch (err) {
+  } catch (err) {
     console.error("❌ Chat error:", err);
     res.status(500).json({ response: `Internal error: ${err.message}`, session_id });
-  }
-
   }
 });
 
