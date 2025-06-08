@@ -41,7 +41,8 @@ export default function App() {
     setDir(detectDir(userMsg));
     setLoading(true);
     try {
-      const res = await fetch('/chat', {
+      const apiUrl = import.meta.env.VITE_API_URL || '/chat';
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMsg, session_id: sessionIdRef.current })
