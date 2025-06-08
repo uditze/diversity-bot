@@ -23,10 +23,16 @@ if (!OPENAI_ASSISTANT_ID) {
 const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
 
 // load scenarios from local txt file
-const scenariosFile = new URL('./scenarios/albert_scenarios_multilingual.txt', import.meta.url);
+const scenariosFile = './albert_scenarios_multilingual.txt';
 const scenarios = {};
 let currentLang = 'en';
-for (const line of fs.readFileSync(scenariosFile, 'utf8').split(/\r?\n/)) {
+let scenarioContent = '';
+try {
+  scenarioContent = fs.readFileSync(scenariosFile, 'utf8');
+} catch {
+  console.error('❌ Scenarios file not found:', scenariosFile);
+}
+for (const line of scenarioContent.split(/\r?\n/)) {
   if (line.startsWith('[') && line.endsWith(']')) {
     currentLang = line.slice(1, -1);
     scenarios[currentLang] = [];
@@ -34,6 +40,12 @@ for (const line of fs.readFileSync(scenariosFile, 'utf8').split(/\r?\n/)) {
     if (!scenarios[currentLang]) scenarios[currentLang] = [];
     scenarios[currentLang].push(line.trim());
   }
+}
+if (!fs.existsSync(scenariosFile)) {
+  console.error('❌ Scenarios file not found:', scenariosFile);
+}
+if (Object.keys(scenarios).length === 0) {
+  console.warn('⚠️ No scenarios loaded from file.');
 }
 
 const sessions = {};
@@ -83,6 +95,9 @@ app.post('/chat', async (req, res) => {
 
     const scenarioList = scenarios[session.lang] || scenarios['en'] || [];
     const scenarioText = scenarioList[session.scenarioIndex] || '';
+    if (!scenarioText) {
+      console.warn('⚠️ Empty scenarioText – assistant will get no instructions.');
+    }
 
     const run = await openai.beta.threads.runs.create(session.threadId, {
       assistant_id: assistantId,
@@ -91,14 +106,14 @@ app.post('/chat', async (req, res) => {
     });
 
     let status = run.status;
-    while (status === 'queued' || status === 'in_progress') {
+    let retries = 10;
+    while ((status === 'queued' || status === 'in_progress') && retries-- > 0) {
       await new Promise((r) => setTimeout(r, 1000));
       const rStatus = await openai.beta.threads.runs.retrieve(session.threadId, run.id);
       status = rStatus.status;
     }
-
     if (status !== 'completed') {
-      throw new Error('Run failed');
+      throw new Error('Run failed or timed out');
     }
 
     const list = await openai.beta.threads.messages.list(session.threadId, { limit: 1 });
@@ -113,10 +128,13 @@ app.post('/chat', async (req, res) => {
     return res.json({ response: assistantMsg.trim(), session_id });
   } catch (err) {
     console.error("❌ Chat error:", err);
-    return res.status(500).json({
-      response: "Internal error: " + err.message,
-      session_id,
-    });
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).send(
+      JSON.stringify({
+        response: "Internal error: " + err.message,
+        session_id,
+      })
+    );
   }
 });
 
