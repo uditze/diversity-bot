@@ -1,10 +1,11 @@
 # AI Chat Starter
 
-This repository is a simple example of a full‑stack project using GPT‑4o.
-It contains a minimal Express backend and a small React frontend.
+This repository contains "Albert", a simple multilingual chatbot that uses the
+OpenAI Assistants API (GPT‑4o) through an Express backend and a small React
+frontend.
 
 ```
-/backend   Node.js server exposing `/api/chat`
+/backend   Node.js server exposing `/chat`
 /frontend  React application built with Vite
 ```
 
@@ -21,7 +22,7 @@ cd ../frontend && npm install
 
 ```bash
 cp ../backend/env.example ../backend/.env
-# edit backend/.env and set OPENAI_API_KEY
+# edit backend/.env and set OPENAI_API_KEY and ASSISTANT_ID
 ```
 
 3. Start both services for development:
@@ -32,9 +33,9 @@ cd backend && npm start
 cd frontend && npm run dev
 ```
 
-The frontend will send requests to `http://localhost:3001/api/chat` by default.
+The frontend will send requests to `http://localhost:3001/chat` by default.
 
 ## Deploy
 
 Deploy the backend and frontend on your preferred platform as two separate services.
-Remember to set the `OPENAI_API_KEY` environment variable in the backend.
+Remember to set the `OPENAI_API_KEY` and `ASSISTANT_ID` environment variables in the backend.

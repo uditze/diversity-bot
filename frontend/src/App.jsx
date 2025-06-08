@@ -1,42 +1,92 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import './App.css';
+
+function randomId() {
+  return Math.random().toString(36).slice(2);
+}
 
 export default function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [dir, setDir] = useState('ltr');
+  const textareaRef = useRef(null);
+
+  const sessionIdRef = useRef(null);
+  useEffect(() => {
+    let sid = localStorage.getItem('session_id');
+    if (!sid) {
+      sid = randomId();
+      localStorage.setItem('session_id', sid);
+    }
+    sessionIdRef.current = sid;
+  }, []);
+
+  const adjustHeight = (e) => {
+    const el = e.target;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  };
+
+  const detectDir = (text) => {
+    if (/[\u0590-\u05FF\u0600-\u06FF]/.test(text)) return 'rtl';
+    return 'ltr';
+  };
 
   const send = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || loading) return;
     const userMsg = input;
     setInput('');
     setMessages((m) => [...m, { sender: 'user', text: userMsg }]);
+    setDir(detectDir(userMsg));
+    setLoading(true);
     try {
-      const res = await fetch('http://localhost:3001/api/chat', {
+      const res = await fetch('/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg })
+        body: JSON.stringify({ message: userMsg, session_id: sessionIdRef.current })
       });
       const data = await res.json();
-      setMessages((m) => [...m, { sender: 'bot', text: data.response }]);
-    } catch (err) {
-      console.error(err);
+      if (data.response) {
+        setMessages((m) => [...m, { sender: 'bot', text: data.response }]);
+        setDir(detectDir(data.response));
+      }
+    } catch {
+      setMessages((m) => [...m, { sender: 'bot', text: 'Error processing request.' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send();
     }
   };
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
-      <h1>AI Chat</h1>
-      <div>
+    <div className="chat-container" dir={dir}>
+      <header className="header">
+        אלברט - בוט לקידום הכשירות התרבותית בהוראה באקדמיה
+      </header>
+      <div className="messages">
         {messages.map((m, i) => (
-          <div key={i}><strong>{m.sender}:</strong> {m.text}</div>
+          <div key={i} className={`message ${m.sender}`}>{m.text}</div>
         ))}
+        {loading && <div className="message bot">...</div>}
       </div>
-      <textarea
-        rows="3"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        style={{ width: '100%', marginTop: '1rem' }}
-      />
-      <button onClick={send}>Send</button>
+      <div className="input-area">
+        <textarea
+          ref={textareaRef}
+          value={input}
+          onInput={(e) => { adjustHeight(e); setInput(e.target.value); }}
+          onKeyDown={onKeyDown}
+          rows={1}
+          placeholder="Type your message..."
+        />
+        <button onClick={send} disabled={loading}>Send</button>
+      </div>
     </div>
   );
 }
