@@ -43,11 +43,22 @@ export default function App() {
     try {
       const apiUrl = import.meta.env.VITE_API_URL || '/chat';
       const res = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userMsg, session_id: sessionIdRef.current })
-      });
-      const data = await res.json();
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ message: userMsg, session_id: sessionIdRef.current })
+});
+
+const text = await res.text();
+console.log("RAW RESPONSE:", text);
+
+let data;
+try {
+  data = JSON.parse(text);
+} catch (e) {
+  console.error("Failed to parse JSON:", e);
+  throw new Error("Invalid JSON");
+}
+
       if (data.response) {
         setMessages((m) => [...m, { sender: 'bot', text: data.response }]);
         setDir(detectDir(data.response));
