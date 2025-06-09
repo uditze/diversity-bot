@@ -10,15 +10,6 @@ if (!openai.apiKey || !assistantId) {
   throw new Error("Missing OPENAI_API_KEY or ASSISTANT_ID in environment variables.");
 }
 
-// הודעת מערכת קבועה
-const systemInstructions = `
-אתה בוט שמסייע למרצות ולמרצים לפתח את הכשירות התרבותית שלהם בהוראה באקדמיה.
-אתה מציג למשתמשים תרחישים רגישים ומעורר שיח רפלקטיבי עליהם.
-שאל שאלה אחת קצרה בלבד אחרי כל תרחיש או תגובה.
-אל תציע פתרונות. אל תחזור על מה שנאמר. אל תסטה מהתרחיש הנוכחי.
-אם המשתמש מבקש תרחיש חדש - הצג את התרחיש הבא מתוך הרשימה.
-`;
-
 export async function createThreadAndSendMessage({ message, thread_id, language, gender }) {
   let thread;
 
@@ -35,7 +26,6 @@ export async function createThreadAndSendMessage({ message, thread_id, language,
 
   const run = await openai.beta.threads.runs.create(thread.id, {
     assistant_id: assistantId,
-    instructions: systemInstructions + getLangAndGenderNote(language, gender),
   });
 
   let runStatus;
@@ -51,10 +41,4 @@ export async function createThreadAndSendMessage({ message, thread_id, language,
     reply: lastMessage?.content?.[0]?.text?.value || '',
     newThreadId: thread_id ? null : thread.id,
   };
-}
-
-function getLangAndGenderNote(language, gender) {
-  const langNote = language === 'ar' ? 'ענה בערבית.' : language === 'en' ? 'Reply in English.' : 'ענה בעברית.';
-  const genderNote = gender === 'female' ? 'השתמש בלשון נקבה.' : gender === 'male' ? 'השתמש בלשון זכר.' : '';
-  return `\n${langNote} ${genderNote}`.trim();
 }
