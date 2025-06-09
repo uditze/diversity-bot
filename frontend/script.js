@@ -15,7 +15,7 @@ form.addEventListener('submit', async (e) => {
   autoResize();
 
   try {
-    const response = await fetch('http://localhost:3001/chat', {
+    const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
