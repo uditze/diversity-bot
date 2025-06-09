@@ -1,13 +1,14 @@
 import OpenAI from 'openai';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 const assistantId = process.env.ASSISTANT_ID;
+
+if (!openai.apiKey || !assistantId) {
+  throw new Error("Missing OPENAI_API_KEY or ASSISTANT_ID in environment variables.");
+}
 
 // הודעת מערכת קבועה
 const systemInstructions = `
