@@ -1,16 +1,1 @@
-# קבצים ותיקיות שלא נרצה שייכנסו לגיטהאב
 
-# תיקיות
-node_modules/
-dist/
-
-# קבצי סביבה
-.env
-
-# קבצים זמניים של macOS
-.DS_Store
-
-# קבצי לוג
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
