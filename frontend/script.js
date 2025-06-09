@@ -15,7 +15,10 @@ async function sendInitialMessage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: 'שלום',
+        message: `אני בוט שמסייע למרצות ולמרצים לפתח את הכשירות התרבותית שלהם בהוראה באקדמיה אני אציג בפניך מספר תרחישים מהכיתה עליך לחשוב כיצד תתמודד עם התרחיש המטרה של השיח על התרחישים היא לא לתת "תשובות נכונות" אלא לקדם את המודעות להיבטים של מגוון בהוראה  
+האם תרצה שאפנה אליך בלשון זכר או נקבה  
+Want to chat in English Just type a word  
+بدك نحكي بالعربية؟ بس اكتب كلمة`,
         thread_id: null,
         language: 'he',
         gender: null
