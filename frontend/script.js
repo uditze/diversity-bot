@@ -4,6 +4,32 @@ const input = document.getElementById('user-input');
 
 let threadId = null;
 
+// שליחת הודעת פתיחה ברגע שהדף נטען
+window.addEventListener('load', () => {
+  sendInitialMessage();
+});
+
+async function sendInitialMessage() {
+  try {
+    const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: 'שלום',
+        thread_id: null,
+        language: 'he',
+        gender: null
+      }),
+    });
+
+    const data = await response.json();
+    if (data.reply) addMessage(data.reply, 'bot');
+    if (data.thread_id) threadId = data.thread_id;
+  } catch (err) {
+    console.error('Error loading initial message:', err);
+  }
+}
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const userMessage = input.value.trim();
