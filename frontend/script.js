@@ -4,6 +4,14 @@ const input = document.getElementById('user-input');
 
 let threadId = null;
 
+// שליחה אוטומטית כשמשתמש לוחץ Enter (בלי Shift)
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    form.dispatchEvent(new Event('submit'));
+  }
+});
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const userMessage = input.value.trim();
