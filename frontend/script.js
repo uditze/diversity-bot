@@ -4,35 +4,6 @@ const input = document.getElementById('user-input');
 
 let threadId = null;
 
-// שליחת הודעת פתיחה ברגע שהדף נטען
-window.addEventListener('load', () => {
-  sendInitialMessage();
-});
-
-async function sendInitialMessage() {
-  try {
-    const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: `אני בוט שמסייע למרצות ולמרצים לפתח את הכשירות התרבותית שלהם בהוראה באקדמיה אני אציג בפניך מספר תרחישים מהכיתה עליך לחשוב כיצד תתמודד עם התרחיש המטרה של השיח על התרחישים היא לא לתת "תשובות נכונות" אלא לקדם את המודעות להיבטים של מגוון בהוראה  
-האם תרצה שאפנה אליך בלשון זכר או נקבה  
-Want to chat in English Just type a word  
-بدك نحكي بالعربية؟ بس اكتب كلمة`,
-        thread_id: null,
-        language: 'he',
-        gender: null
-      }),
-    });
-
-    const data = await response.json();
-    if (data.reply) addMessage(data.reply, 'bot');
-    if (data.thread_id) threadId = data.thread_id;
-  } catch (err) {
-    console.error('Error loading initial message:', err);
-  }
-}
-
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const userMessage = input.value.trim();
