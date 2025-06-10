@@ -1,21 +1,17 @@
-const chatBox = document.getElementById('chat');
-const form = document.getElementById('chat-form');
-const input = document.getElementById('user-input');
-
-let threadId = null;
-
-// שליחה אוטומטית כשמשתמש לוחץ Enter (בלי Shift)
-input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    form.dispatchEvent(new Event('submit'));
-  }
-});
-
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const userMessage = input.value.trim();
   if (!userMessage) return;
+
+  // ✅ בדיקה אם המשתמש ביקש לעבור לתרחיש הבא
+  const nextTriggers = ['כן', 'יאללה', 'next', 'التالي'];
+  if (nextTriggers.includes(userMessage.toLowerCase())) {
+    addMessage(userMessage, 'user');
+    input.value = '';
+    autoResize();
+    await showNextScenario();
+    return;
+  }
 
   // הצגת הודעת המשתמש
   addMessage(userMessage, 'user');
@@ -42,64 +38,3 @@ form.addEventListener('submit', async (e) => {
     console.error(err);
   }
 });
-
-// הצגת תרחיש ראשוני כשנכנסים לעמוד
-window.addEventListener('load', () => {
-  showNextScenario();
-});
-
-// הצגת הודעה בבועה
-function addMessage(text, role) {
-  const msg = document.createElement('div');
-  msg.className = `message ${role}`;
-  msg.innerText = text;
-  chatBox.appendChild(msg);
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
-// שינוי גובה אוטומטי לתיבת הטקסט
-input.addEventListener('input', autoResize);
-function autoResize() {
-  input.style.height = 'auto';
-  input.style.height = input.scrollHeight + 'px';
-}
-
-// זיהוי שפה בסיסי
-function detectLanguage(text) {
-  if (/[\u0600-\u06FF]/.test(text)) return 'ar';
-  if (/^[a-zA-Z0-9\s.,?!'":;()]+$/.test(text)) return 'en';
-  return 'he';
-}
-
-// זיהוי מגדר (פשוט מאוד – לפי מילות מפתח)
-function detectGender(text) {
-  const femaleWords = ['אני מרצה', 'אני מורה', 'אני חוקרת'];
-  const maleWords = ['אני מרצה גבר', 'אני מורה גבר', 'אני חוקר'];
-  if (femaleWords.some(w => text.includes(w))) return 'female';
-  if (maleWords.some(w => text.includes(w))) return 'male';
-  return null;
-}
-
-// שליפת תרחיש מהשרת
-async function showNextScenario() {
-  try {
-    const response = await fetch('https://diversity-bot-1.onrender.com/scenario', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        thread_id: threadId,
-        language: 'he', // אפשר לשנות לפי צורך
-      }),
-    });
-
-    const data = await response.json();
-    if (data.scenario) {
-      addMessage(data.scenario, 'bot');
-    } else {
-      addMessage('לא נותרו תרחישים זמינים כרגע.', 'bot');
-    }
-  } catch (err) {
-    console.error('❌ שגיאה בשליפת תרחיש:', err);
-    addMessage('שגיאה בטעינת תרחיש.', 'bot');
-  }
-}
