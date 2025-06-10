@@ -23,18 +23,18 @@ export function getNextScenario(threadId, language = 'he') {
       scenarioIndexPerThread.set(id, 0);
       return { scenario: "לא נותרו תרחישים נוספים. חזרנו לתרחיש הראשון." };
     }
-
-    const block = blocks[index].trim();
+    
+    // הסרת תווים בלתי נראים (כמו BOM) ורווחים מיותרים
+    const block = blocks[index].trim().replace(/^\uFEFF/, '');
     scenarioIndexPerThread.set(id, index + 1);
 
     const langTag = { he: '[HEBREW]', en: '[ENGLISH]', ar: '[ARABIC]' }[language] || '[HEBREW]';
-    const regex = new RegExp(`${langTag.replace('[', '\\[').replace(']', '\\]')}([\\s\\S]*?)(?=\\[[A-Z]+\\]|$)`, 'm');
+    // שיפור מנגנון החיפוש (Regex) כך שיהיה גמיש יותר
+    const regex = new RegExp(`\\s*${langTag.replace('[', '\\[').replace(']', '\\]')}\\s*([\\s\\S]*?)(?=\\s*\\[[A-Z]+\\]|$)`, 'm');
     const match = block.match(regex);
     
     if (!match || !match[1]) {
-      const fallbackRegex = new RegExp(`\\[HEBREW\\]([\\s\\S]*?)(?=\\[[A-Z]+\\]|$)`, 'm');
-      const fallbackMatch = block.match(fallbackRegex);
-      return { scenario: fallbackMatch && fallbackMatch[1] ? fallbackMatch[1].trim() : null };
+        return { scenario: null };
     }
     
     return { scenario: match[1].trim() };
