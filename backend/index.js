@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import { randomUUID } from 'crypto'; // הוספת ייבוא נדרש
 import { createThreadAndSendMessage } from './assistant.js';
 import { getNextScenario } from './scenarios.js';
 
@@ -16,6 +17,13 @@ app.use((req, res, next) => {
   next();
 });
 
+// נתיב חדש ליצירת מזהה שיחה ייחודי
+app.get('/start-session', (req, res) => {
+  const sessionId = randomUUID();
+  console.log(`[Session] New session started with ID: ${sessionId}`);
+  res.json({ sessionId: sessionId });
+});
+
 // מסלול הצ'אט
 app.post('/chat', async (req, res) => {
   try {
@@ -25,21 +33,20 @@ app.post('/chat', async (req, res) => {
     });
     res.json({ reply, thread_id: newThreadId || thread_id });
   } catch (err) {
+    console.error('Error handling /chat:', err);
     res.status(500).json({ error: 'Something went wrong.' });
   }
 });
 
-// מסלול תרחישים - גרסה סופית
+// מסלול תרחישים
 app.post('/scenario', (req, res) => {
   console.log('[Handler] נכנס ללוגיקה של /scenario.');
   try {
     const thread_id = req.body?.thread_id;
     const language = req.body?.language;
-    console.log(`[Handler] קורא ל-getNextScenario עם language: ${language}`);
     
     const result = getNextScenario(thread_id, language);
 
-    console.log('[Handler] תוצאה מ-getNextScenario:', result);
     if (result && result.scenario) {
       res.json({ scenario: result.scenario });
     } else {
