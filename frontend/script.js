@@ -2,7 +2,7 @@ const chatBox = document.getElementById('chat');
 const form = document.getElementById('chat-form');
 const input = document.getElementById('user-input');
 
-let sessionId = null; // השתנה מ-threadId ל-sessionId
+let sessionId = null;
 let interactionCount = 0;
 let scenarioShown = false;
 
@@ -11,8 +11,8 @@ window.addEventListener('load', async () => {
   try {
     const response = await fetch('https://diversity-bot-1.onrender.com/start-session');
     const data = await response.json();
-    sessionId = data.sessionId; // שמירת המזהה הייחודי
-    showOpeningMessage(); // הצגת הודעת הפתיחה רק לאחר קבלת מזהה
+    sessionId = data.sessionId;
+    showOpeningMessage();
   } catch (err) {
     console.error("Failed to start a session:", err);
     addMessage("אירעה שגיאה ביצירת שיחה חדשה. אנא רענן את הדף.", "bot");
@@ -30,7 +30,7 @@ input.addEventListener('keydown', (e) => {
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const userMessage = input.value.trim();
-  if (!userMessage || !sessionId) return; // אל תשלח אם אין מזהה שיחה
+  if (!userMessage || !sessionId) return;
 
   addMessage(userMessage, 'user');
   input.value = '';
@@ -38,16 +38,7 @@ form.addEventListener('submit', async (e) => {
 
   const lang = detectLanguage(userMessage);
 
-  // בדיקה אם זו בקשה לעבור תרחיש
-  const nextTriggers = ['כן', 'יאללה', 'next', 'التالي'];
-  if (nextTriggers.includes(userMessage.toLowerCase())) {
-    scenarioShown = false;
-    await showNextScenario(lang);
-    interactionCount = 0;
-    return;
-  }
-
-  // אם עוד לא הוצג תרחיש (למשל, זו התגובה להודעת הפתיחה)
+  // אם עוד לא הוצג תרחיש (זו התגובה להודעת הפתיחה)
   if (!scenarioShown) {
     await showNextScenario(lang);
     return;
@@ -60,19 +51,32 @@ form.addEventListener('submit', async (e) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: userMessage,
-        thread_id: sessionId, // שימוש ב-sessionId גם עבור OpenAI
+        thread_id: sessionId,
         language: lang,
         gender: detectGender(userMessage),
       }),
     });
 
     const data = await response.json();
-    if (data.reply) {
+    
+    // בדיקת הפקודה המיוחדת מה-Assistant
+    if (data.reply && data.reply.includes('[NEXT_SCENARIO]')) {
+      // אם ה-Assistant אמר לעבור, הצג את התרחיש הבא
+      scenarioShown = false;
+      interactionCount = 0;
+      await showNextScenario(lang);
+    } else if (data.reply) {
+      // אחרת, הצג את תגובת ה-Assistant (שאלה רפלקטיבית)
       addMessage(data.reply, 'bot');
       interactionCount++;
       if (interactionCount >= 6) {
-        addMessage('האם ברצונך לעבור לתרחיש הבא?', 'bot');
-        interactionCount = 0;
+        const nextScenarioPrompts = {
+          he: 'האם להמשיך לתרחיש הבא?',
+          en: 'Shall we continue to the next scenario?',
+          ar: 'هل ننتقل إلى السيناريو التالي؟'
+        };
+        addMessage(nextScenarioPrompts[lang] || nextScenarioPrompts['he'], 'bot');
+        interactionCount = 0; // מאפסים כדי שהשאלה תוצג פעם אחת
       }
     }
   } catch (err) {
@@ -81,15 +85,13 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-
-// פונקציית שליפת תרחיש (משתמשת כעת ב-sessionId)
 async function showNextScenario(language = 'he') {
   try {
     const response = await fetch('https://diversity-bot-1.onrender.com/scenario', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        thread_id: sessionId, // שליחת המזהה הייחודי
+        thread_id: sessionId,
         language: language,
       }),
     });
