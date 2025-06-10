@@ -10,11 +10,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- רשם בקשות חדש ---
-// ידפיס כל בקשה שמגיעה לשרת
+// רשם בקשות
 app.use((req, res, next) => {
   console.log(`[Request Logger] התקבלה בקשה: ${req.method} ${req.path}`);
-  next(); // המשך לבקשה הבאה
+  next();
 });
 
 // מסלול הצ'אט הקיים
@@ -26,25 +25,17 @@ app.post('/chat', async (req, res) => {
     });
     res.json({ reply, thread_id: newThreadId || thread_id });
   } catch (err) {
-    console.error('❌ Error handling /chat:', err);
     res.status(500).json({ error: 'Something went wrong.' });
   }
 });
 
-// מסלול לשליפת תרחישים
+// --- מסלול תרחישים עם קוד בדיקה קשיח ---
 app.post('/scenario', (req, res) => {
-  const { thread_id, language } = req.body;
-  try {
-    const result = getNextScenario(thread_id, language);
-    if (result.scenario) {
-      res.json({ scenario: result.scenario });
-    } else {
-      res.status(404).json({ error: 'No scenario found or available.' });
-    }
-  } catch (err) {
-    console.error('❌ Error handling /scenario:', err);
-    res.status(500).json({ error: 'Failed to retrieve scenario.' });
-  }
+  console.log('[TEST] נכנסתי בהצלחה לתוך הלוגיקה של /scenario.');
+  const testScenario = {
+    scenario: 'זהו תרחיש בדיקה. אם אתה רואה את ההודעה הזו, הניתוב עובד והתקלה כמעט פתורה!'
+  };
+  res.json(testScenario);
 });
 
 const PORT = process.env.PORT || 3001;
