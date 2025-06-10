@@ -7,7 +7,6 @@ let genderSelected = false;
 let interactionCount = 0;
 let scenarioShown = false;
 
-
 // שליחה אוטומטית כשמשתמש לוחץ Enter (בלי Shift)
 input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
@@ -168,3 +167,8 @@ async function showNextScenario() {
     addMessage('שגיאה בטעינת תרחיש.', 'bot');
   }
 }
+
+// ✅ הצגת הודעת פתיחה ברגע טעינת העמוד
+window.addEventListener('load', () => {
+  showOpeningMessage();
+});
