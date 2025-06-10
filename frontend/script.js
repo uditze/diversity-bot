@@ -30,14 +30,39 @@ form.addEventListener('submit', async (e) => {
 
   const lang = detectLanguage(userMessage);
 
-  // בחירת מגדר לאחר פתיחה (רק לעברית וערבית)
-  if (!genderSelected && (lang === 'he' || lang === 'ar')) {
-    genderSelected = true;
-    await showNextScenario();
-    return;
+  // שליחה ראשונה לשרת כדי לקבל threadId (כולל אחרי בחירת מגדר)
+  if (!threadId) {
+    try {
+      const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          thread_id: null,
+          language: lang,
+          gender: detectGender(userMessage),
+        }),
+      });
+
+      const data = await response.json();
+      if (data.reply) addMessage(data.reply, 'bot');
+      if (data.thread_id) threadId = data.thread_id;
+
+      // אם זו תגובת בחירת מגדר – נשלוף תרחיש ראשון
+      if (!genderSelected && (lang === 'he' || lang === 'ar')) {
+        genderSelected = true;
+        await showNextScenario();
+      }
+
+      return;
+    } catch (err) {
+      addMessage('אירעה תקלה בשליחת ההודעה.', 'bot');
+      console.error(err);
+      return;
+    }
   }
 
-  // מעבר תרחיש לפי מילת טריגר
+  // טריגר למעבר תרחיש
   const nextTriggers = ['כן', 'יאללה', 'next', 'التالي'];
   if (nextTriggers.includes(userMessage.toLowerCase())) {
     await showNextScenario();
@@ -45,7 +70,7 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
-  // שליחה לשרת
+  // שליחה לשרת לאחר פתיחה
   try {
     const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
       method: 'POST',
@@ -67,7 +92,6 @@ form.addEventListener('submit', async (e) => {
         interactionCount = 0;
       }
     }
-    if (data.thread_id) threadId = data.thread_id;
   } catch (err) {
     addMessage('אירעה תקלה בשליחת ההודעה.', 'bot');
     console.error(err);
@@ -77,7 +101,7 @@ form.addEventListener('submit', async (e) => {
 // הצגת הודעה בבועה
 function addMessage(text, role) {
   const msg = document.createElement('div');
-  msg.className = `message ${role}`; // תיקון התחביר כאן
+  msg.className = `message ${role}`;
   msg.innerText = text;
   chatBox.appendChild(msg);
   chatBox.scrollTop = chatBox.scrollHeight;
@@ -122,7 +146,7 @@ async function showNextScenario() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        thread_id: threadId,
+        thread_id: threadId || 'default-thread',
         language: 'he',
       }),
     });
