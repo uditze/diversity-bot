@@ -2,12 +2,10 @@ import fs from 'fs';
 import path from 'path';
 
 const scenarioFile = path.resolve('scenarios.txt');
-
-// מבנה פשוט לשמירת מיקום לפי thread
 const scenarioIndexPerThread = new Map();
 
 export function getNextScenario(threadId, language = 'he') {
-  const id = threadId || 'default-thread'; // ✅ טיפול במקרה שאין threadId
+  const id = threadId || 'default-thread';
 
   const content = fs.readFileSync(scenarioFile, 'utf8');
   const blocks = content.split('================================================================================');
@@ -26,8 +24,15 @@ export function getNextScenario(threadId, language = 'he') {
     ar: '[ARABIC]',
   }[language] || '[HEBREW]';
 
-  const match = block.match(new RegExp(`${langTag}[\\s\\S]*?(?=\\[|$)`));
+  // חיפוש קטע השפה
+  let match = block.match(new RegExp(`${langTag}[\\s\\S]*?(?=(\\[[A-Z]+\\]|$))`, 'm'));
+
+  // fallback לעברית אם לא נמצא בשפה המבוקשת
+  if (!match && langTag !== '[HEBREW]') {
+    match = block.match(new RegExp(`\\[HEBREW\\][\\s\\S]*?(?=(\\[[A-Z]+\\]|$))`, 'm'));
+  }
+
   return {
-    scenario: match ? match[0].replace(langTag, '').trim() : null,
+    scenario: match ? match[0].replace(langTag, '').replace(/\[HEBREW\]/, '').trim() : null,
   };
 }
