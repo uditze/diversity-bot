@@ -83,4 +83,58 @@ function addMessage(text, role) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// שינוי גובה אוטומטי לתי
+// שינוי גובה אוטומטי לתיבת הטקסט
+input.addEventListener('input', autoResize);
+function autoResize() {
+  input.style.height = 'auto';
+  input.style.height = input.scrollHeight + 'px';
+}
+
+// זיהוי שפה בסיסי
+function detectLanguage(text) {
+  if (/[\u0600-\u06FF]/.test(text)) return 'ar';
+  if (/^[a-zA-Z0-9\s.,?!'":;()]+$/.test(text)) return 'en';
+  return 'he';
+}
+
+// זיהוי מגדר
+function detectGender(text) {
+  const femaleWords = ['אני מרצה', 'אני מורה', 'אני חוקרת'];
+  const maleWords = ['אני מרצה גבר', 'אני מורה גבר', 'אני חוקר'];
+  if (femaleWords.some(w => text.includes(w))) return 'female';
+  if (maleWords.some(w => text.includes(w))) return 'male';
+  return null;
+}
+
+// הודעת פתיחה
+function showOpeningMessage() {
+  const message = `אני בוט שמסייע למרצות ולמרצים לפתח את הכשירות התרבותית שלהם בהוראה באקדמיה אני אציג בפניך מספר תרחישים מהכיתה עליך לחשוב כיצד תתמודד עם התרחיש המטרה של השיח על התרחישים היא לא לתת "תשובות נכונות" אלא לקדם את המודעות להיבטים של מגוון בהוראה  
+האם תרצה שאפנה אליך בלשון זכר או נקבה?  
+Want to chat in English Just type a word  
+بدك نحكي بالعربية؟ بس اكتب كلمة`;
+  addMessage(message, 'bot');
+}
+
+// שליפת תרחיש מהשרת
+async function showNextScenario() {
+  try {
+    const response = await fetch('https://diversity-bot-1.onrender.com/scenario', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        thread_id: threadId,
+        language: 'he',
+      }),
+    });
+
+    const data = await response.json();
+    if (data.scenario) {
+      addMessage(data.scenario, 'bot');
+    } else {
+      addMessage('לא נותרו תרחישים זמינים כרגע.', 'bot');
+    }
+  } catch (err) {
+    console.error('❌ שגיאה בשליפת תרחיש:', err);
+    addMessage('שגיאה בטעינת תרחיש.', 'bot');
+  }
+}
