@@ -43,6 +43,11 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
+// הצגת תרחיש ראשוני כשנכנסים לעמוד
+window.addEventListener('load', () => {
+  showNextScenario();
+});
+
 // הצגת הודעה בבועה
 function addMessage(text, role) {
   const msg = document.createElement('div');
@@ -73,4 +78,28 @@ function detectGender(text) {
   if (femaleWords.some(w => text.includes(w))) return 'female';
   if (maleWords.some(w => text.includes(w))) return 'male';
   return null;
+}
+
+// שליפת תרחיש מהשרת
+async function showNextScenario() {
+  try {
+    const response = await fetch('https://diversity-bot-1.onrender.com/scenario', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        thread_id: threadId,
+        language: 'he', // אפשר לשנות לפי צורך
+      }),
+    });
+
+    const data = await response.json();
+    if (data.scenario) {
+      addMessage(data.scenario, 'bot');
+    } else {
+      addMessage('לא נותרו תרחישים זמינים כרגע.', 'bot');
+    }
+  } catch (err) {
+    console.error('❌ שגיאה בשליפת תרחיש:', err);
+    addMessage('שגיאה בטעינת תרחיש.', 'bot');
+  }
 }
