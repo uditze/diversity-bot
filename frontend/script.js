@@ -26,8 +26,18 @@ form.addEventListener('submit', async (e) => {
 
   const lang = detectLanguage(userMessage);
 
-  // שליחה ראשונה לשרת כדי לקבל threadId (כולל אחרי בחירת מגדר)
+  // --- תיקון: בדיקת תשובת מגדר בלבד (לא שולחים לשרת, רק מציגים תרחיש) ---
   if (!threadId) {
+    const genderResponses = [
+      'זכר', 'נקבה', 'أنا', 'انا', 'أنثى', 'ذكر', 'female', 'male'
+    ];
+    if (genderResponses.includes(userMessage.trim().toLowerCase())) {
+      genderSelected = true;
+      await showNextScenario();
+      return;
+    }
+
+    // שליחה ראשונה לשרת כדי לקבל threadId (כולל אחרי תשובות אחרות)
     try {
       const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
         method: 'POST',
