@@ -16,10 +16,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// מסלול הצ'אט הקיים
+// מסלול הצ'אט
 app.post('/chat', async (req, res) => {
-  const { message, thread_id, language, gender } = req.body;
   try {
+    const { message, thread_id, language, gender } = req.body;
     const { reply, newThreadId } = await createThreadAndSendMessage({
       message, thread_id, language, gender,
     });
@@ -29,13 +29,27 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-// --- מסלול תרחישים עם קוד בדיקה קשיח ---
+// מסלול תרחישים - גרסה סופית
 app.post('/scenario', (req, res) => {
-  console.log('[TEST] נכנסתי בהצלחה לתוך הלוגיקה של /scenario.');
-  const testScenario = {
-    scenario: 'זהו תרחיש בדיקה. אם אתה רואה את ההודעה הזו, הניתוב עובד והתקלה כמעט פתורה!'
-  };
-  res.json(testScenario);
+  console.log('[Handler] נכנס ללוגיקה של /scenario.');
+  try {
+    const thread_id = req.body?.thread_id;
+    const language = req.body?.language;
+    console.log(`[Handler] קורא ל-getNextScenario עם language: ${language}`);
+    
+    const result = getNextScenario(thread_id, language);
+
+    console.log('[Handler] תוצאה מ-getNextScenario:', result);
+    if (result && result.scenario) {
+      res.json({ scenario: result.scenario });
+    } else {
+      console.error('[Handler] getNextScenario החזיר תוצאה ריקה.');
+      res.status(404).json({ error: 'No scenario found.' });
+    }
+  } catch (err) {
+    console.error('❌ Error in /scenario handler:', err);
+    res.status(500).json({ error: 'Failed to retrieve scenario.' });
+  }
 });
 
 const PORT = process.env.PORT || 3001;
