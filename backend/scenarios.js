@@ -7,17 +7,18 @@ const scenarioFile = path.resolve('scenarios.txt');
 const scenarioIndexPerThread = new Map();
 
 export function getNextScenario(threadId, language = 'he') {
-  const content = fs.readFileSync(scenarioFile, 'utf8');
+  const id = threadId || 'default-thread'; // ✅ טיפול במקרה שאין threadId
 
+  const content = fs.readFileSync(scenarioFile, 'utf8');
   const blocks = content.split('================================================================================');
-  const index = scenarioIndexPerThread.get(threadId) || 0;
+  const index = scenarioIndexPerThread.get(id) || 0;
 
   if (index >= blocks.length) {
     return { scenario: null };
   }
 
   const block = blocks[index];
-  scenarioIndexPerThread.set(threadId, index + 1);
+  scenarioIndexPerThread.set(id, index + 1);
 
   const langTag = {
     he: '[HEBREW]',
