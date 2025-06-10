@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { createThreadAndSendMessage } from './assistant.js';
+import { getNextScenario } from './scenarios.js'; // ✅ חדש
 
 dotenv.config();
 
@@ -9,6 +10,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// מסלול הצ'אט הקיים
 app.post('/chat', async (req, res) => {
   const { message, thread_id, language, gender } = req.body;
 
@@ -24,6 +26,23 @@ app.post('/chat', async (req, res) => {
   } catch (err) {
     console.error('Error handling /chat:', err.message);
     res.status(500).json({ error: 'Something went wrong.' });
+  }
+});
+
+// ✅ מסלול חדש לשליפת תרחישים
+app.post('/scenario', (req, res) => {
+  const { thread_id, language } = req.body;
+
+  try {
+    const result = getNextScenario(thread_id, language);
+    if (result.scenario) {
+      res.json({ scenario: result.scenario });
+    } else {
+      res.status(404).json({ error: 'No more scenarios available.' });
+    }
+  } catch (err) {
+    console.error('Error handling /scenario:', err.message);
+    res.status(500).json({ error: 'Failed to retrieve scenario.' });
   }
 });
 
