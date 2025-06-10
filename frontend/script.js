@@ -5,7 +5,7 @@ const input = document.getElementById('user-input');
 let threadId = null;
 let genderSelected = false;
 let interactionCount = 0;
-let scenarioShown = false; // ✅ דגל להצגת תרחיש
+let scenarioShown = false;
 
 // הצגת הודעת פתיחה בלבד כשנכנסים לעמוד
 window.addEventListener('load', () => {
@@ -49,10 +49,15 @@ form.addEventListener('submit', async (e) => {
       if (data.reply) addMessage(data.reply, 'bot');
       if (data.thread_id) threadId = data.thread_id;
 
-      // אם זו תגובת בחירת מגדר – נשלוף תרחיש ראשון
+      // אם זו תגובת בחירת מגדר בעברית או ערבית – הצג תרחיש
       if (!genderSelected && (lang === 'he' || lang === 'ar')) {
         genderSelected = true;
         await showNextScenario();
+      }
+
+      // אם המשתמש עובר לאנגלית – סימן שנבחרה שפה ואין תרחיש
+      if (!genderSelected && lang === 'en') {
+        genderSelected = true;
       }
 
       return;
@@ -63,7 +68,7 @@ form.addEventListener('submit', async (e) => {
     }
   }
 
-  // מניעת שליחה לפני הצגת תרחיש
+  // מניעת שליחה לבוט לפני הצגת תרחיש
   if (!scenarioShown) return;
 
   // טריגר למעבר תרחיש
