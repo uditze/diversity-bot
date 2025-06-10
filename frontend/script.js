@@ -7,10 +7,6 @@ let genderSelected = false;
 let interactionCount = 0;
 let scenarioShown = false;
 
-// הצגת הודעת פתיחה בלבד כשנכנסים לעמוד
-window.addEventListener('load', () => {
-  showOpeningMessage();
-});
 
 // שליחה אוטומטית כשמשתמש לוחץ Enter (בלי Shift)
 input.addEventListener('keydown', (e) => {
