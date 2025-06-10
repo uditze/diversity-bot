@@ -65,6 +65,8 @@ form.addEventListener('submit', async (e) => {
       scenarioShown = false;
       interactionCount = 0;
       await showNextScenario(lang);
+      // ✅ תיקון קריטי: הוספת return כדי לעצור את ריצת הפונקציה כאן
+      return; 
     } else if (data.reply) {
       // אחרת, הצג את תגובת ה-Assistant (שאלה רפלקטיבית)
       addMessage(data.reply, 'bot');
@@ -76,7 +78,7 @@ form.addEventListener('submit', async (e) => {
           ar: 'هل ننتقل إلى السيناريو التالي؟'
         };
         addMessage(nextScenarioPrompts[lang] || nextScenarioPrompts['he'], 'bot');
-        interactionCount = 0; // מאפסים כדי שהשאלה תוצג פעם אחת
+        interactionCount = 0;
       }
     }
   } catch (err) {
