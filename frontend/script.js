@@ -6,7 +6,11 @@ let threadId = null;
 let genderSelected = false;
 let interactionCount = 0;
 let scenarioShown = false;
-let scenarioLang = 'he';
+
+// הצגת הודעת פתיחה בלבד כשנכנסים לעמוד
+window.addEventListener('load', () => {
+  showOpeningMessage();
+});
 
 // שליחה אוטומטית כשמשתמש לוחץ Enter (בלי Shift)
 input.addEventListener('keydown', (e) => {
@@ -27,66 +31,67 @@ form.addEventListener('submit', async (e) => {
 
   const lang = detectLanguage(userMessage);
 
-  // שלב ראשון: טריגר לבחירת מגדר/שפה
-  if (!threadId && !genderSelected) {
-    if (
-      ['זכר', 'נקבה', 'أنا', 'انا', 'أنثى', 'ذكر', 'female', 'male'].includes(userMessage.trim().toLowerCase())
-      || lang !== 'he'
-    ) {
-      genderSelected = true;
-      scenarioLang = lang; // קובע את שפת התרחישים לשפה של המשתמש
-      await showNextScenario();
-      return;
-    }
-  }
-
-  // מניעת שליחה לשרת לפני הצגת תרחיש
-  if (!scenarioShown) return;
-
-  // טריגר למעבר תרחיש
-  const nextTriggers = ['כן', 'יאללה', 'next', 'التالي'];
-  if (nextTriggers.includes(userMessage.trim().toLowerCase())) {
-    await showNextScenario();
-    interactionCount = 0;
-    return;
-  }
-
-  // אחרי הצגת תרחיש: שליחה לשרת
-  try {
-    // הגדרת threadId רק בשאלה אמיתית ראשונה
-    if (!threadId) {
+  // שליחה ראשונה לשרת כדי לקבל threadId (כולל אחרי בחירת מגדר)
+  if (!threadId) {
+    try {
       const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: userMessage,
           thread_id: null,
-          language: scenarioLang,
+          language: lang,
           gender: detectGender(userMessage),
         }),
       });
+
       const data = await response.json();
       if (data.reply) addMessage(data.reply, 'bot');
       if (data.thread_id) threadId = data.thread_id;
-      interactionCount++;
-      if (interactionCount >= 6) {
-        addMessage('האם ברצונך לעבור לתרחיש הבא?', 'bot');
-        interactionCount = 0;
+
+      // אם זו תגובת בחירת מגדר בעברית או ערבית – הצג תרחיש
+      if (!genderSelected && (lang === 'he' || lang === 'ar')) {
+        genderSelected = true;
+        await showNextScenario();
       }
+
+      // אם המשתמש עובר לאנגלית – סימן שנבחרה שפה ואין תרחיש
+      if (!genderSelected && lang === 'en') {
+        genderSelected = true;
+      }
+
+      return;
+    } catch (err) {
+      addMessage('אירעה תקלה בשליחת ההודעה.', 'bot');
+      console.error(err);
       return;
     }
+  }
 
-    // שליחה רגילה
+  // מניעת שליחה לבוט לפני הצגת תרחיש
+  if (!scenarioShown) return;
+
+  // טריגר למעבר תרחיש
+  const nextTriggers = ['כן', 'יאללה', 'next', 'التالي'];
+  if (nextTriggers.includes(userMessage.toLowerCase())) {
+    await showNextScenario();
+    interactionCount = 0;
+    return;
+  }
+
+  // שליחה לשרת לאחר פתיחה
+  try {
     const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: userMessage,
         thread_id: threadId,
-        language: scenarioLang,
+        language: lang,
         gender: detectGender(userMessage),
       }),
     });
+
     const data = await response.json();
     if (data.reply) {
       addMessage(data.reply, 'bot');
@@ -151,7 +156,7 @@ async function showNextScenario() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         thread_id: threadId || 'default-thread',
-        language: scenarioLang,
+        language: 'he',
       }),
     });
 
@@ -167,8 +172,3 @@ async function showNextScenario() {
     addMessage('שגיאה בטעינת תרחיש.', 'bot');
   }
 }
-
-// ✅ הצגת הודעת פתיחה ברגע טעינת העמוד
-window.addEventListener('load', () => {
-  showOpeningMessage();
-});
