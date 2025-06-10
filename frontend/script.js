@@ -3,9 +3,9 @@ const form = document.getElementById('chat-form');
 const input = document.getElementById('user-input');
 
 let threadId = null;
-let genderSelected = false;
 let interactionCount = 0;
 let scenarioShown = false;
+let hasSelectedLanguage = false; // דגל לניהול ההודעה הראשונה
 
 // הצגת הודעת פתיחה בלבד כשנכנסים לעמוד
 window.addEventListener('load', () => {
@@ -31,55 +31,27 @@ form.addEventListener('submit', async (e) => {
 
   const lang = detectLanguage(userMessage);
 
-  // שליחה ראשונה לשרת כדי לקבל threadId (כולל אחרי בחירת מגדר)
-  if (!threadId) {
-    try {
-      const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMessage,
-          thread_id: null,
-          language: lang,
-          gender: detectGender(userMessage),
-        }),
-      });
-
-      const data = await response.json();
-      if (data.reply) addMessage(data.reply, 'bot');
-      if (data.thread_id) threadId = data.thread_id;
-
-      // אם זו תגובת בחירת מגדר בעברית או ערבית – הצג תרחיש
-      if (!genderSelected && (lang === 'he' || lang === 'ar')) {
-        genderSelected = true;
-        await showNextScenario();
-      }
-
-      // אם המשתמש עובר לאנגלית – סימן שנבחרה שפה ואין תרחיש
-      if (!genderSelected && lang === 'en') {
-        genderSelected = true;
-      }
-
-      return;
-    } catch (err) {
-      addMessage('אירעה תקלה בשליחת ההודעה.', 'bot');
-      console.error(err);
-      return;
-    }
+  // שלב 1: טיפול בהודעה הראשונה (בחירת שפה/מגדר)
+  if (!hasSelectedLanguage) {
+    hasSelectedLanguage = true;
+    await showNextScenario(lang);
+    return; // עצור כאן כדי לא לשלוח את הודעת ההגדרה ל-Assistant
   }
 
-  // מניעת שליחה לבוט לפני הצגת תרחיש
-  if (!scenarioShown) return;
-
-  // טריגר למעבר תרחיש
+  // שלב 2: טיפול בבקשה לעבור לתרחיש הבא
   const nextTriggers = ['כן', 'יאללה', 'next', 'التالي'];
   if (nextTriggers.includes(userMessage.toLowerCase())) {
-    await showNextScenario();
+    scenarioShown = false;
+    await showNextScenario(lang);
     interactionCount = 0;
     return;
   }
 
-  // שליחה לשרת לאחר פתיחה
+  // שלב 3: שליחת הודעה רגילה ל-Assistant (רק אם הוצג תרחיש)
+  if (!scenarioShown) {
+    return;
+  }
+
   try {
     const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
       method: 'POST',
@@ -93,6 +65,9 @@ form.addEventListener('submit', async (e) => {
     });
 
     const data = await response.json();
+    if (data.thread_id) {
+      threadId = data.thread_id;
+    }
     if (data.reply) {
       addMessage(data.reply, 'bot');
       interactionCount++;
@@ -107,7 +82,6 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-// הצגת הודעה בבועה
 function addMessage(text, role) {
   const msg = document.createElement('div');
   msg.className = `message ${role}`;
@@ -116,56 +90,50 @@ function addMessage(text, role) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// שינוי גובה אוטומטי לתיבת הטקסט
-input.addEventListener('input', autoResize);
 function autoResize() {
   input.style.height = 'auto';
-  input.style.height = input.scrollHeight + 'px';
+  input.style.height = `${input.scrollHeight}px`;
 }
 
-// זיהוי שפה בסיסי
 function detectLanguage(text) {
   if (/[\u0600-\u06FF]/.test(text)) return 'ar';
   if (/^[a-zA-Z0-9\s.,?!'":;()]+$/.test(text)) return 'en';
   return 'he';
 }
 
-// זיהוי מגדר
 function detectGender(text) {
-  const femaleWords = ['אני מרצה', 'אני מורה', 'אני חוקרת'];
-  const maleWords = ['אני מרצה גבר', 'אני מורה גבר', 'אני חוקר'];
-  if (femaleWords.some(w => text.includes(w))) return 'female';
-  if (maleWords.some(w => text.includes(w))) return 'male';
+  if (['נקבה', 'אישה'].some(w => text.includes(w))) return 'female';
+  if (['זכר', 'גבר'].some(w => text.includes(w))) return 'male';
   return null;
 }
 
-// הודעת פתיחה
 function showOpeningMessage() {
-  const message = `אני בוט שמסייע למרצות ולמרצים לפתח את הכשירות התרבותית שלהם בהוראה באקדמיה אני אציג בפניך מספר תרחישים מהכיתה עליך לחשוב כיצד תתמודד עם התרחיש המטרה של השיח על התרחישים היא לא לתת "תשובות נכונות" אלא לקדם את המודעות להיבטים של מגוון בהוראה  
-האם תרצה שאפנה אליך בלשון זכר או נקבה?  
-Want to chat in English Just type a word  
-بدك نحكي بالعربية؟ بس اكتب كلمة`;
+  const message = `אני בוט שמסייע למרצות ולמרצים לפתח את הכשירות התרבותית שלהם בהוראה באקדמיה. אני אציג בפניך מספר תרחישים מהכיתה, ועליך לחשוב כיצד תתמודד. המטרה של השיח על התרחישים היא לא לתת "תשובות נכונות" אלא לקדם את המודעות להיבטים של מגוון בהוראה.\n\nהאם תרצה שאפנה אליך בלשון זכר או נקבה?\nWant to chat in English? Just type a word.\nبدك نحكي بالعربية؟ بس اكتب كلمة.`;
   addMessage(message, 'bot');
 }
 
-// שליפת תרחיש מהשרת
-async function showNextScenario() {
+async function showNextScenario(language = 'he') {
   try {
     const response = await fetch('https://diversity-bot-1.onrender.com/scenario', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        thread_id: threadId || 'default-thread',
-        language: 'he',
+        thread_id: threadId,
+        language: language,
       }),
     });
+
+    if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || `HTTP error! status: ${response.status}`);
+    }
 
     const data = await response.json();
     if (data.scenario) {
       addMessage(data.scenario, 'bot');
       scenarioShown = true;
     } else {
-      addMessage('לא נותרו תרחישים זמינים כרגע.', 'bot');
+      addMessage('לא הצלחתי לטעון את התרחיש הבא.', 'bot');
     }
   } catch (err) {
     console.error('❌ שגיאה בשליפת תרחיש:', err);
