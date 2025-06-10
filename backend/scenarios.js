@@ -27,19 +27,19 @@ export function getNextScenario(threadId, language = 'he') {
     const block = blocks[index].trim().replace(/^\uFEFF/, '');
     scenarioIndexPerThread.set(id, index + 1);
 
-    const langTag = { he: '[HEBREW]', en: '[ENGLISH]', ar: '[ARABIC]' }[language] || '[HEBREW]';
-    
-    // התיקון הסופי: הסרת הדגל 'm' מה-Regex
-    const regex = new RegExp(`\\s*${langTag.replace('[', '\\[').replace(']', '\\]')}\\s*([\\s\\S]*?)(?=\\s*\\[[A-Z]+\\]|$)`);
-    const match = block.match(regex);
-    
-    if (!match || !match[1]) {
-      const fallbackRegex = new RegExp(`\\[HEBREW\\]([\\s\\S]*?)(?=\\s*\\[[A-Z]+\\]|$)`);
-      const fallbackMatch = block.match(fallbackRegex);
-      return { scenario: fallbackMatch && fallbackMatch[1] ? fallbackMatch[1].trim() : null };
+    const langTags = { he: '[HEBREW]', en: '[ENGLISH]', ar: '[ARABIC]' };
+    const requestedTag = langTags[language] || langTags['he'];
+
+    const regex = new RegExp(`\\s*${requestedTag.replace('[', '\\[').replace(']', '\\]')}\\s*([\\s\\S]*?)(?=\\s*\\[[A-Z]+\\]|$)`);
+    let match = block.match(regex);
+
+    // אם לא נמצאה התאמה לשפה המבוקשת, נסוג לעברית
+    if (!match && language !== 'he') {
+      const fallbackRegex = new RegExp(`\\s*\\[HEBREW\\]\\s*([\\s\\S]*?)(?=\\s*\\[[A-Z]+\\]|$)`);
+      match = block.match(fallbackRegex);
     }
     
-    return { scenario: match[1].trim() };
+    return { scenario: match && match[1] ? match[1].trim() : null };
 
   } catch (error) {
     console.error("Error in getNextScenario:", error);
