@@ -5,6 +5,7 @@ const input = document.getElementById('user-input');
 let threadId = null;
 let genderSelected = false;
 let interactionCount = 0;
+let scenarioShown = false; // ✅ דגל להצגת תרחיש
 
 // הצגת הודעת פתיחה בלבד כשנכנסים לעמוד
 window.addEventListener('load', () => {
@@ -62,6 +63,9 @@ form.addEventListener('submit', async (e) => {
     }
   }
 
+  // מניעת שליחה לפני הצגת תרחיש
+  if (!scenarioShown) return;
+
   // טריגר למעבר תרחיש
   const nextTriggers = ['כן', 'יאללה', 'next', 'التالي'];
   if (nextTriggers.includes(userMessage.toLowerCase())) {
@@ -88,7 +92,7 @@ form.addEventListener('submit', async (e) => {
       addMessage(data.reply, 'bot');
       interactionCount++;
       if (interactionCount >= 6) {
-        addMessage('רוצה לעבור לתרחיש הבא? כתוב/כתבי כן או יאללה.', 'bot');
+        addMessage('האם ברצונך לעבור לתרחיש הבא?', 'bot');
         interactionCount = 0;
       }
     }
@@ -154,6 +158,7 @@ async function showNextScenario() {
     const data = await response.json();
     if (data.scenario) {
       addMessage(data.scenario, 'bot');
+      scenarioShown = true;
     } else {
       addMessage('לא נותרו תרחישים זמינים כרגע.', 'bot');
     }
