@@ -3,9 +3,8 @@ const form = document.getElementById('chat-form');
 const input = document.getElementById('user-input');
 
 let sessionId = null;
-let interactionCount = 0;
 let scenarioShown = false;
-let userGender = null; // ✅ משתנה חדש לשמירת המגדר
+let userGender = null;
 
 window.addEventListener('load', async () => {
   try {
@@ -37,21 +36,19 @@ form.addEventListener('submit', async (e) => {
 
   const lang = detectLanguage(userMessage);
 
-  // ✅ שמירת המגדר אם זוהה
   const detectedGender = detectGender(userMessage);
   if (detectedGender) {
     userGender = detectedGender;
   }
 
+  // אם זהו התרחיש הראשון, הצג אותו
   if (!scenarioShown) {
     await showNextScenario(lang);
     return;
   }
 
+  // שליחה רגילה ל-Assistant
   try {
-    const shouldRequestSummary = (interactionCount === 5);
-    const shouldAddCompliment = (interactionCount % 2 !== 0);
-
     const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -59,27 +56,21 @@ form.addEventListener('submit', async (e) => {
         message: userMessage,
         thread_id: sessionId,
         language: lang,
-        gender: userGender, // ✅ שליחת המגדר השמור
-        request_summary: shouldRequestSummary,
-        add_compliment: shouldAddCompliment,
+        gender: userGender,
       }),
     });
 
     const data = await response.json();
     
+    // בדיקה אם ה-Assistant הורה לעבור תרחיש
     if (data.reply && data.reply.includes('[NEXT_SCENARIO]')) {
+      // אם כן, הצג את התרחיש הבא
       scenarioShown = false;
-      interactionCount = 0;
       await showNextScenario(lang);
       return; 
     } else if (data.reply) {
+      // אחרת, פשוט הצג את תגובתו (שיכולה להיות שאלה, או סיכום+שאלה)
       addMessage(data.reply, 'bot');
-      
-      if (shouldRequestSummary) {
-        interactionCount = 0;
-      } else {
-        interactionCount++;
-      }
     }
   } catch (err) {
     addMessage('אירעה תקלה בשליחת ההודעה.', 'bot');
@@ -87,8 +78,8 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-// פונקציות העזר...
 
+// פונקציות עזר...
 async function showNextScenario(language = 'he') {
   try {
     const response = await fetch('https://diversity-bot-1.onrender.com/scenario', {
@@ -135,7 +126,6 @@ function detectLanguage(text) {
 function detectGender(text) {
   const lowerCaseText = text.toLowerCase();
   if (['נקבה', 'אישה', 'בת', 'מרצה', 'מורה', 'female', 'woman'].some(w => lowerCaseText.includes(w))) {
-    // Basic check to avoid matching 'male' if 'female' is present
     if (['זכר', 'גבר', 'male', 'man'].some(w => lowerCaseText.includes(w))) return null;
     return 'female';
   }
