@@ -5,6 +5,7 @@ const input = document.getElementById('user-input');
 let sessionId = null;
 let interactionCount = 0;
 let scenarioShown = false;
+let userGender = null; // ✅ משתנה חדש לשמירת המגדר
 
 window.addEventListener('load', async () => {
   try {
@@ -36,6 +37,12 @@ form.addEventListener('submit', async (e) => {
 
   const lang = detectLanguage(userMessage);
 
+  // ✅ שמירת המגדר אם זוהה
+  const detectedGender = detectGender(userMessage);
+  if (detectedGender) {
+    userGender = detectedGender;
+  }
+
   if (!scenarioShown) {
     await showNextScenario(lang);
     return;
@@ -43,8 +50,6 @@ form.addEventListener('submit', async (e) => {
 
   try {
     const shouldRequestSummary = (interactionCount === 5);
-    // ✅ לוגיקה חדשה: בקש מחמאה כל תגובה שנייה (זוגית)
-    // interactionCount מתחיל ב-0, אז נבדוק אם הוא אי-זוגי לפני השליחה
     const shouldAddCompliment = (interactionCount % 2 !== 0);
 
     const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
@@ -54,9 +59,9 @@ form.addEventListener('submit', async (e) => {
         message: userMessage,
         thread_id: sessionId,
         language: lang,
-        gender: detectGender(userMessage),
+        gender: userGender, // ✅ שליחת המגדר השמור
         request_summary: shouldRequestSummary,
-        add_compliment: shouldAddCompliment, // שליחת הסימון החדש
+        add_compliment: shouldAddCompliment,
       }),
     });
 
@@ -82,8 +87,7 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-// פונקציות העזר נשארות ללא שינוי...
-// (showNextScenario, addMessage, etc.)
+// פונקציות העזר...
 
 async function showNextScenario(language = 'he') {
   try {
@@ -129,8 +133,13 @@ function detectLanguage(text) {
 }
 
 function detectGender(text) {
-  if (['נקבה', 'אישה'].some(w => text.includes(w))) return 'female';
-  if (['זכר', 'גבר'].some(w => text.includes(w))) return 'male';
+  const lowerCaseText = text.toLowerCase();
+  if (['נקבה', 'אישה', 'בת', 'מרצה', 'מורה', 'female', 'woman'].some(w => lowerCaseText.includes(w))) {
+    // Basic check to avoid matching 'male' if 'female' is present
+    if (['זכר', 'גבר', 'male', 'man'].some(w => lowerCaseText.includes(w))) return null;
+    return 'female';
+  }
+  if (['זכר', 'גבר', 'בן', 'מרצה', 'מורה', 'male', 'man'].some(w => lowerCaseText.includes(w))) return 'male';
   return null;
 }
 
