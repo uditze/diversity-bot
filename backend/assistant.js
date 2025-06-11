@@ -11,11 +11,10 @@ if (!openai.apiKey || !assistantId) {
   throw new Error("Missing OPENAI_API_KEY or ASSISTANT_ID in environment variables.");
 }
 
-export async function createThreadAndSendMessage({ message, thread_id, language, gender }) {
+export async function createThreadAndSendMessage({ message, thread_id, language, gender, request_summary = false }) {
   try {
     let thread;
     const sessionId = thread_id;
-
     const existingThreadId = threadIdMap.get(sessionId);
 
     if (existingThreadId) {
@@ -30,20 +29,23 @@ export async function createThreadAndSendMessage({ message, thread_id, language,
       content: message,
     });
 
-    // --- הוספת הנחיה דינמית לשפת המענה ---
     const languageInstructions = {
-      en: "Please respond in English.",
-      ar: "الرجاء الرد باللغة العربية.",
-      he: "אנא הגב בעברית.",
+      en: `Please respond in English.`,
+      ar: `الرجاء الرد باللغة العربية.`,
+      he: `אנא הגב בעברית.`,
     };
+    
+    let instructions = languageInstructions[language] || languageInstructions['he'];
+
+    if (request_summary) {
+      instructions += " The user has reached the 6th interaction. Your response must be structured in three parts: a compliment on their last message, a brief summary of the discussion, and then ask if they want to move to the next scenario.";
+    }
 
     const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: assistantId,
-      // הוספת ההנחיה הספציפית לריצה זו
-      additional_instructions: languageInstructions[language] || languageInstructions['he'],
+      additional_instructions: instructions,
     });
 
-    // המתנה לסיום הריצה
     let runStatus;
     const maxAttempts = 15;
     for (let i = 0; i < maxAttempts; i++) {
