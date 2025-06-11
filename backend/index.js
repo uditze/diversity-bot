@@ -62,4 +62,10 @@ app.post('/scenario', (req, res) => {
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
+  // בדיקה אם משתנה הסביבה של מסד הנתונים נטען
+  if (process.env.DATABASE_URL) {
+    console.log('✅ DATABASE_URL environment variable loaded successfully.');
+  } else {
+    console.error('❌ CRITICAL: DATABASE_URL environment variable NOT FOUND.');
+  }
 });
