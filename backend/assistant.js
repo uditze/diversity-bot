@@ -37,11 +37,18 @@ export async function createThreadAndSendMessage({ message, thread_id, language,
     
     let instructions = languageInstructions[language] || languageInstructions['he'];
 
+    // ✅ הוספת הנחיית מגדר
+    if (gender === 'female') {
+      instructions += ' You MUST address the user in the feminine form (פנייה בלשון נקבה).';
+    } else if (gender === 'male') {
+      instructions += ' You MUST address the user in the masculine form (פנייה בלשון זכר).';
+    }
+
     if (request_summary) {
-      instructions += " The user has reached the 6th interaction. Your response must be structured in three parts: a compliment on their last message, a brief summary of the discussion, and then ask if they want to move to the next scenario.";
+      instructions += " The user has reached the 6th interaction. Your response must be structured in three parts: a positive feedback phrase, a brief summary, and then ask if they want to move to the next scenario.";
     } else if (add_compliment) {
-      // ✅ הנחיה חדשה, חזקה ומדויקת יותר
-      instructions += " Your response MUST begin with a short, affirming compliment about the user's input. After the compliment, on a new line, ask your single reflective question.";
+      // ✅ שינוי הנחיית המחמאה לטון הנכון
+      instructions += " Your response MUST begin with a short, objective, encouraging phrase about the user's idea (like 'That's an interesting point'). After the phrase, on a new line, ask your single reflective question.";
     }
 
     const run = await openai.beta.threads.runs.create(thread.id, {
@@ -49,6 +56,7 @@ export async function createThreadAndSendMessage({ message, thread_id, language,
       additional_instructions: instructions,
     });
 
+    // ... (המשך הקוד נשאר ללא שינוי)
     let runStatus;
     const maxAttempts = 15;
     for (let i = 0; i < maxAttempts; i++) {
