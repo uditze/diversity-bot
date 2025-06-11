@@ -1,48 +1,77 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import { randomUUID } from 'crypto';
 import { createThreadAndSendMessage } from './assistant.js';
-import { getNextScenario } from './scenarios.js'; // ✅ חדש
+import { getNextScenario } from './scenarios.js';
+import pool, { initializeDatabase } from './db.js'; // ייבוא החיבור למסד הנתונים
 
 dotenv.config();
+
+// הפעלת הפונקציה שמוודאת שהטבלה קיימת
+initializeDatabase();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// מסלול הצ'אט הקיים
+app.use((req, res, next) => {
+  console.log(`[Request Logger] התקבלה בקשה: ${req.method} ${req.path}`);
+  next();
+});
+
+app.get('/start-session', (req, res) => {
+  const sessionId = randomUUID();
+  console.log(`[Session] New session started with ID: ${sessionId}`);
+  res.json({ sessionId: sessionId });
+});
+
 app.post('/chat', async (req, res) => {
-  const { message, thread_id, language, gender } = req.body;
-
   try {
-    const { reply, newThreadId } = await createThreadAndSendMessage({
-      message,
-      thread_id,
-      language,
-      gender,
-    });
+    const { message, thread_id, language, gender } = req.body;
 
+    // --- קטע קוד חדש: שמירת תגובת המשתמש במסד הנתונים ---
+    try {
+      const insertQuery = `
+        INSERT INTO responses (session_id, user_response, language)
+        VALUES ($1, $2, $3)
+      `;
+      const values = [thread_id, message, language];
+      await pool.query(insertQuery, values);
+      console.log('✅ User response saved to database.');
+    } catch (dbError) {
+      console.error('❌ Error saving response to database:', dbError);
+      // אנחנו לא עוצרים את ריצת האפליקציה אם יש בעיה בשמירה, רק רושמים שגיאה
+    }
+    // --- סוף הקטע החדש ---
+
+    const { reply, newThreadId } = await createThreadAndSendMessage({
+      message, thread_id, language, gender,
+    });
+    
     res.json({ reply, thread_id: newThreadId || thread_id });
   } catch (err) {
-    console.error('❌ Error handling /chat:', err);
-    res.status(500).json({ error: err.message || 'Something went wrong.' });
+    console.error('Error handling /chat:', err);
+    res.status(500).json({ error: 'Something went wrong.' });
   }
 });
 
-// ✅ מסלול חדש לשליפת תרחישים
 app.post('/scenario', (req, res) => {
-  const { thread_id, language } = req.body;
-
   try {
+    const thread_id = req.body?.thread_id;
+    const language = req.body?.language;
+    
     const result = getNextScenario(thread_id, language);
-    if (result.scenario) {
+
+    if (result && result.scenario) {
       res.json({ scenario: result.scenario });
     } else {
-      res.status(404).json({ error: 'No more scenarios available.' });
+      console.error('[Handler] getNextScenario החזיר תוצאה ריקה.');
+      res.status(404).json({ error: 'No scenario found.' });
     }
   } catch (err) {
-    console.error('❌ Error handling /scenario:', err);
-    res.status(500).json({ error: err.message || 'Failed to retrieve scenario.' });
+    console.error('❌ Error in /scenario handler:', err);
+    res.status(500).json({ error: 'Failed to retrieve scenario.' });
   }
 });
 
