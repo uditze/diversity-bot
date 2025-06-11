@@ -42,8 +42,10 @@ form.addEventListener('submit', async (e) => {
   }
 
   try {
-    // בדיקה אם זו האינטראקציה השישית (הספירה מתחילה מ-0)
     const shouldRequestSummary = (interactionCount === 5);
+    // ✅ לוגיקה חדשה: בקש מחמאה כל תגובה שנייה (זוגית)
+    // interactionCount מתחיל ב-0, אז נבדוק אם הוא אי-זוגי לפני השליחה
+    const shouldAddCompliment = (interactionCount % 2 !== 0);
 
     const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
       method: 'POST',
@@ -53,7 +55,8 @@ form.addEventListener('submit', async (e) => {
         thread_id: sessionId,
         language: lang,
         gender: detectGender(userMessage),
-        request_summary: shouldRequestSummary, // שליחת הסימון לשרת
+        request_summary: shouldRequestSummary,
+        add_compliment: shouldAddCompliment, // שליחת הסימון החדש
       }),
     });
 
@@ -67,7 +70,6 @@ form.addEventListener('submit', async (e) => {
     } else if (data.reply) {
       addMessage(data.reply, 'bot');
       
-      // איפוס הספירה אם התקבלה הודעת סיכום, או קידום הספירה
       if (shouldRequestSummary) {
         interactionCount = 0;
       } else {
@@ -79,6 +81,9 @@ form.addEventListener('submit', async (e) => {
     console.error(err);
   }
 });
+
+// פונקציות העזר נשארות ללא שינוי...
+// (showNextScenario, addMessage, etc.)
 
 async function showNextScenario(language = 'he') {
   try {
