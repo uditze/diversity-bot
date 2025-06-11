@@ -6,7 +6,6 @@ let sessionId = null;
 let interactionCount = 0;
 let scenarioShown = false;
 
-// בעת טעינת העמוד: קבל מזהה שיחה ייחודי ואז הצג הודעת פתיחה
 window.addEventListener('load', async () => {
   try {
     const response = await fetch('https://diversity-bot-1.onrender.com/start-session');
@@ -19,7 +18,6 @@ window.addEventListener('load', async () => {
   }
 });
 
-// שליחה אוטומטית כשמשתמש לוחץ Enter
 input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
@@ -38,14 +36,15 @@ form.addEventListener('submit', async (e) => {
 
   const lang = detectLanguage(userMessage);
 
-  // אם עוד לא הוצג תרחיש (זו התגובה להודעת הפתיחה)
   if (!scenarioShown) {
     await showNextScenario(lang);
     return;
   }
 
-  // שליחה רגילה ל-Assistant
   try {
+    // בדיקה אם זו האינטראקציה השישית (הספירה מתחילה מ-0)
+    const shouldRequestSummary = (interactionCount === 5);
+
     const response = await fetch('https://diversity-bot-1.onrender.com/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -54,31 +53,25 @@ form.addEventListener('submit', async (e) => {
         thread_id: sessionId,
         language: lang,
         gender: detectGender(userMessage),
+        request_summary: shouldRequestSummary, // שליחת הסימון לשרת
       }),
     });
 
     const data = await response.json();
     
-    // בדיקת הפקודה המיוחדת מה-Assistant
     if (data.reply && data.reply.includes('[NEXT_SCENARIO]')) {
-      // אם ה-Assistant אמר לעבור, הצג את התרחיש הבא
       scenarioShown = false;
       interactionCount = 0;
       await showNextScenario(lang);
-      // ✅ תיקון קריטי: הוספת return כדי לעצור את ריצת הפונקציה כאן
       return; 
     } else if (data.reply) {
-      // אחרת, הצג את תגובת ה-Assistant (שאלה רפלקטיבית)
       addMessage(data.reply, 'bot');
-      interactionCount++;
-      if (interactionCount >= 6) {
-        const nextScenarioPrompts = {
-          he: 'האם להמשיך לתרחיש הבא?',
-          en: 'Shall we continue to the next scenario?',
-          ar: 'هل ننتقل إلى السيناريو التالي؟'
-        };
-        addMessage(nextScenarioPrompts[lang] || nextScenarioPrompts['he'], 'bot');
+      
+      // איפוס הספירה אם התקבלה הודעת סיכום, או קידום הספירה
+      if (shouldRequestSummary) {
         interactionCount = 0;
+      } else {
+        interactionCount++;
       }
     }
   } catch (err) {
@@ -111,7 +104,6 @@ async function showNextScenario(language = 'he') {
   }
 }
 
-// --- פונקציות עזר (ללא שינוי) ---
 function addMessage(text, role) {
   const msg = document.createElement('div');
   msg.className = `message ${role}`;
