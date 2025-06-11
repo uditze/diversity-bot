@@ -11,7 +11,8 @@ if (!openai.apiKey || !assistantId) {
   throw new Error("Missing OPENAI_API_KEY or ASSISTANT_ID in environment variables.");
 }
 
-export async function createThreadAndSendMessage({ message, thread_id, language, gender, request_summary = false }) {
+// הפונקציה מקבלת כעת פרמטר נוסף: add_compliment
+export async function createThreadAndSendMessage({ message, thread_id, language, gender, request_summary = false, add_compliment = false }) {
   try {
     let thread;
     const sessionId = thread_id;
@@ -39,6 +40,9 @@ export async function createThreadAndSendMessage({ message, thread_id, language,
 
     if (request_summary) {
       instructions += " The user has reached the 6th interaction. Your response must be structured in three parts: a compliment on their last message, a brief summary of the discussion, and then ask if they want to move to the next scenario.";
+    } else if (add_compliment) {
+      // הנחיה חדשה למתן מחמאה
+      instructions += " Please include a short, natural, affirming phrase or a compliment in your response before asking the reflective question.";
     }
 
     const run = await openai.beta.threads.runs.create(thread.id, {
@@ -46,6 +50,7 @@ export async function createThreadAndSendMessage({ message, thread_id, language,
       additional_instructions: instructions,
     });
 
+    // ... (המשך הקוד נשאר ללא שינוי)
     let runStatus;
     const maxAttempts = 15;
     for (let i = 0; i < maxAttempts; i++) {
