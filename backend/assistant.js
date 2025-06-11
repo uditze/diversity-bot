@@ -1,105 +1,81 @@
 import OpenAI from 'openai';
-import fetch from 'node-fetch'; // ודא שזה מותקן ב־package.json
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 const assistantId = process.env.ASSISTANT_ID;
-const BACKEND_URL = process.env.BACKEND_URL || 'https://diversity-bot-1.onrender.com'; // כתובת השרת שלך
+const threadIdMap = new Map();
 
 if (!openai.apiKey || !assistantId) {
   throw new Error("Missing OPENAI_API_KEY or ASSISTANT_ID in environment variables.");
 }
 
-export async function createThreadAndSendMessage({ message, thread_id, language, gender }) {
+export async function createThreadAndSendMessage({ message, thread_id, language, gender, request_summary = false, add_compliment = false }) {
   try {
     let thread;
+    const sessionId = thread_id;
+    const existingThreadId = threadIdMap.get(sessionId);
 
-    if (thread_id) {
-      thread = await openai.beta.threads.retrieve(thread_id);
-      console.log('📎 Retrieved existing thread:', thread_id);
+    if (existingThreadId) {
+      thread = await openai.beta.threads.retrieve(existingThreadId);
     } else {
       thread = await openai.beta.threads.create();
-      console.log('🧵 Created new thread:', thread.id);
+      threadIdMap.set(sessionId, thread.id);
     }
 
     await openai.beta.threads.messages.create(thread.id, {
       role: 'user',
       content: message,
     });
-    console.log('📨 Message sent to thread:', message);
 
-    let run = await openai.beta.threads.runs.create(thread.id, {
+    const languageInstructions = {
+      en: `Please respond in English.`,
+      ar: `الرجاء الرد باللغة العربية.`,
+      he: `אנא הגב בעברית.`,
+    };
+    
+    let instructions = languageInstructions[language] || languageInstructions['he'];
+
+    if (gender === 'female') {
+      instructions += ' You MUST address the user in the feminine form (פנייה בלשון נקבה).';
+    } else if (gender === 'male') {
+      instructions += ' You MUST address the user in the masculine form (פנייה בלשון זכר).';
+    }
+
+    if (request_summary) {
+      instructions += " The user has reached the 6th interaction. Your response must be structured in three parts: an encouraging phrase, a brief summary, and then ask if they want to move on.";
+    } else if (add_compliment) {
+      // הנחיה חיובית לתת פידבק
+      instructions += " Your response MUST begin with a varied, objective, and encouraging phrase about the user's idea (e.g., 'That's an interesting point'). After the phrase, ask your single reflective question.";
+    } else {
+      // ✅ הנחיה שלילית מפורשת - לא לתת פידבק
+      instructions += " Do NOT use any compliment or affirming phrase. Respond only with the single reflective question.";
+    }
+
+    const run = await openai.beta.threads.runs.create(thread.id, {
       assistant_id: assistantId,
+      additional_instructions: instructions,
     });
-    console.log('▶️ Run started:', run.id);
 
+    // ... (המשך הקוד נשאר ללא שינוי)
     let runStatus;
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    while (attempts < maxAttempts) {
+    const maxAttempts = 15;
+    for (let i = 0; i < maxAttempts; i++) {
       await new Promise((r) => setTimeout(r, 1000));
       runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
-      console.log(`⏳ Run status: ${runStatus.status}`);
-
       if (runStatus.status === 'completed') break;
-
-      // ✅ טיפול בקריאה לפונקציה
-      if (runStatus.status === 'requires_action' && runStatus.required_action?.submit_tool_outputs) {
-        const toolCalls = runStatus.required_action.submit_tool_outputs.tool_calls;
-        const toolResponses = [];
-
-        for (const toolCall of toolCalls) {
-          const { name, arguments: argsJson } = toolCall.function;
-          const args = JSON.parse(argsJson);
-
-          if (name === 'get_next_scenario') {
-            console.log('🔧 Calling tool: get_next_scenario', args);
-
-            const response = await fetch(`${BACKEND_URL}/scenario`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                thread_id: args.thread_id,
-                language: args.language,
-              }),
-            });
-
-            const data = await response.json();
-
-            toolResponses.push({
-              tool_call_id: toolCall.id,
-              output: data.scenario || 'No scenario available.',
-            });
-          }
-        }
-
-        // שליחת הפלטים חזרה ל־OpenAI
-        await openai.beta.threads.runs.submitToolOutputs(thread.id, run.id, {
-          tool_outputs: toolResponses,
-        });
-        console.log('✅ Tool outputs submitted');
-      }
-
-      attempts++;
     }
 
     if (runStatus.status !== 'completed') {
-      throw new Error('Run timeout: did not complete in time.');
+      throw new Error('Run did not complete in time.');
     }
 
     const messages = await openai.beta.threads.messages.list(thread.id);
     const lastMessage = messages.data.find((msg) => msg.role === 'assistant');
-
     const reply = lastMessage?.content?.[0]?.text?.value || '';
-    console.log('✅ Assistant reply:', reply);
 
-    return {
-      reply,
-      newThreadId: thread_id ? null : thread.id,
-    };
+    return { reply, newThreadId: null };
 
   } catch (err) {
     console.error('❌ Error in createThreadAndSendMessage:', err);
