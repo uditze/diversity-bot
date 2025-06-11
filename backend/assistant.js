@@ -37,7 +37,6 @@ export async function createThreadAndSendMessage({ message, thread_id, language,
     
     let instructions = languageInstructions[language] || languageInstructions['he'];
 
-    // ✅ הוספת הנחיית מגדר
     if (gender === 'female') {
       instructions += ' You MUST address the user in the feminine form (פנייה בלשון נקבה).';
     } else if (gender === 'male') {
@@ -45,10 +44,13 @@ export async function createThreadAndSendMessage({ message, thread_id, language,
     }
 
     if (request_summary) {
-      instructions += " The user has reached the 6th interaction. Your response must be structured in three parts: a positive feedback phrase, a brief summary, and then ask if they want to move to the next scenario.";
+      instructions += " The user has reached the 6th interaction. Your response must be structured in three parts: an encouraging phrase, a brief summary, and then ask if they want to move on.";
     } else if (add_compliment) {
-      // ✅ שינוי הנחיית המחמאה לטון הנכון
-      instructions += " Your response MUST begin with a short, objective, encouraging phrase about the user's idea (like 'That's an interesting point'). After the phrase, on a new line, ask your single reflective question.";
+      // הנחיה חיובית לתת פידבק
+      instructions += " Your response MUST begin with a varied, objective, and encouraging phrase about the user's idea (e.g., 'That's an interesting point'). After the phrase, ask your single reflective question.";
+    } else {
+      // ✅ הנחיה שלילית מפורשת - לא לתת פידבק
+      instructions += " Do NOT use any compliment or affirming phrase. Respond only with the single reflective question.";
     }
 
     const run = await openai.beta.threads.runs.create(thread.id, {
