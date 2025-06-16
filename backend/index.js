@@ -1,10 +1,9 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { randomUUID } from 'crypto';
 import { createThreadAndSendMessage } from './assistant.js';
-import { getNextScenario } from './scenarios.js';
 import { supabase } from './supabaseClient.js';
+import { getNextScenario } from './scenarios.js';
 
 dotenv.config();
 
@@ -12,35 +11,37 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ החזרנו את הנתיב החסר ליצירת סשן
-app.get('/start-session', (req, res) => {
-  const sessionId = randomUUID();
-  res.json({ sessionId: sessionId });
-});
-
-// נתיב הצ'אט הראשי, כולל שמירה ל-Supabase
 app.post('/chat', async (req, res) => {
   try {
     const { message, thread_id, language, gender } = req.body;
 
-    // שמירת הודעת המשתמש
+    // שמירת הודעת המשתמש במבנה החדש
     await supabase
       .from('responses')
-      .insert([{ session_id: thread_id, role: 'user', content: message, language: language }]);
+      .insert([{ 
+        session_id: thread_id, 
+        role: 'user', 
+        content: message, 
+        language: language 
+      }]);
 
-    // קבלת תגובה מה-Assistant
-    const { reply, newThreadId } = await createThreadAndSendMessage({
+    const { reply } = await createThreadAndSendMessage({
       message, thread_id, language, gender,
     });
     
-    // שמירת תגובת הבוט
+    // שמירת תגובת הבוט במבנה החדש
     if (reply) {
       await supabase
         .from('responses')
-        .insert([{ session_id: thread_id, role: 'bot', content: reply, language: language }]);
+        .insert([{ 
+          session_id: thread_id, 
+          role: 'bot', 
+          content: reply, 
+          language: language 
+        }]);
     }
     
-    res.json({ reply, thread_id: newThreadId || thread_id });
+    res.json({ reply, thread_id: thread_id });
     
   } catch (err) {
     console.error('Error in /chat handler:', err);
@@ -48,11 +49,9 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-// נתיב לשליפת תרחישים
 app.post('/scenario', (req, res) => {
   try {
-    const thread_id = req.body?.thread_id;
-    const language = req.body?.language;
+    const { thread_id, language } = req.body;
     const result = getNextScenario(thread_id, language);
     if (result && result.scenario) {
       res.json({ scenario: result.scenario });
