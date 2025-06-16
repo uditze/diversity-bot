@@ -1,9 +1,10 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import { randomUUID } from 'crypto';
 import { createThreadAndSendMessage } from './assistant.js';
-import { supabase } from './supabaseClient.js';
 import { getNextScenario } from './scenarios.js';
+import { supabase } from './supabaseClient.js';
 
 dotenv.config();
 
@@ -11,11 +12,18 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// נתיב ליצירת סשן חדש
+app.get('/start-session', (req, res) => {
+  const sessionId = randomUUID();
+  res.json({ sessionId: sessionId });
+});
+
+// נתיב הצ'אט הראשי
 app.post('/chat', async (req, res) => {
   try {
     const { message, thread_id, language, gender } = req.body;
 
-    // שמירת הודעת המשתמש במבנה החדש
+    // שמירת הודעת המשתמש
     await supabase
       .from('responses')
       .insert([{ 
@@ -29,7 +37,7 @@ app.post('/chat', async (req, res) => {
       message, thread_id, language, gender,
     });
     
-    // שמירת תגובת הבוט במבנה החדש
+    // שמירת תגובת הבוט
     if (reply) {
       await supabase
         .from('responses')
@@ -42,16 +50,17 @@ app.post('/chat', async (req, res) => {
     }
     
     res.json({ reply, thread_id: thread_id });
-    
   } catch (err) {
     console.error('Error in /chat handler:', err);
     res.status(500).json({ error: 'Something went wrong.' });
   }
 });
 
+// נתיב לשליפת תרחישים
 app.post('/scenario', (req, res) => {
   try {
-    const { thread_id, language } = req.body;
+    const thread_id = req.body?.thread_id;
+    const language = req.body?.language;
     const result = getNextScenario(thread_id, language);
     if (result && result.scenario) {
       res.json({ scenario: result.scenario });
