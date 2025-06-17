@@ -37,7 +37,6 @@ export function getNextScenario(threadId, language = 'he') {
       match = block.match(fallbackRegex);
     }
     
-    // ✅ מחזירים עכשיו גם את האינדקס של התרחיש
     return { 
       scenario: match && match[1] ? match[1].trim() : null,
       scenarioId: index 
