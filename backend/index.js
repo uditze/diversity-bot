@@ -7,37 +7,30 @@ import { getNextScenario } from './scenarios.js';
 import { supabase } from './supabaseClient.js';
 
 dotenv.config();
-
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// נתיב ליצירת סשן חדש
-app.get('/start-session', (req, res) => {
-  const sessionId = randomUUID();
-  res.json({ sessionId: sessionId });
-});
+app.get('/start-session', (req, res) => { /*...*/ });
 
-// נתיב הצ'אט הראשי
 app.post('/chat', async (req, res) => {
   try {
-    const { message, thread_id, language, gender } = req.body;
+    const { message, thread_id, language, gender, scenario_id } = req.body; // ✅ קבלת מספר התרחיש
 
-    // שמירת הודעת המשתמש
+    // שמירת הודעת המשתמש עם מספר התרחיש
     await supabase
       .from('responses')
       .insert([{ 
         session_id: thread_id, 
         role: 'user', 
         content: message, 
-        language: language 
+        language: language,
+        scenario_id: scenario_id // ✅ שמירת מספר התרחיש
       }]);
 
-    const { reply } = await createThreadAndSendMessage({
-      message, thread_id, language, gender,
-    });
+    const { reply } = await createThreadAndSendMessage({ message, thread_id, language, gender });
     
-    // שמירת תגובת הבוט
+    // שמירת תגובת הבוט עם מספר התרחיש
     if (reply) {
       await supabase
         .from('responses')
@@ -45,7 +38,8 @@ app.post('/chat', async (req, res) => {
           session_id: thread_id, 
           role: 'bot', 
           content: reply, 
-          language: language 
+          language: language,
+          scenario_id: scenario_id // ✅ שמירת מספר התרחיש
         }]);
     }
     
@@ -56,24 +50,20 @@ app.post('/chat', async (req, res) => {
   }
 });
 
-// נתיב לשליפת תרחישים
 app.post('/scenario', (req, res) => {
   try {
-    const thread_id = req.body?.thread_id;
-    const language = req.body?.language;
+    const { thread_id, language } = req.body;
     const result = getNextScenario(thread_id, language);
     if (result && result.scenario) {
-      res.json({ scenario: result.scenario });
+      // ✅ מחזירים עכשיו גם את מזהה התרחיש
+      res.json({ scenario: result.scenario, scenarioId: result.scenarioId });
     } else {
       res.status(404).json({ error: 'No scenario found.' });
     }
   } catch (err) {
-    console.error('❌ Error in /scenario handler:', err);
     res.status(500).json({ error: 'Failed to retrieve scenario.' });
   }
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Original chatbot server running on port ${PORT}`);
-});
+app.listen(PORT, () => { /*...*/ });
