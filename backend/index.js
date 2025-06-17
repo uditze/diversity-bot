@@ -11,39 +11,28 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get('/start-session', (req, res) => { /*...*/ });
+app.get('/start-session', (req, res) => {
+  const sessionId = randomUUID();
+  res.json({ sessionId: sessionId });
+});
 
 app.post('/chat', async (req, res) => {
   try {
-    const { message, thread_id, language, gender, scenario_id } = req.body; // ✅ קבלת מספר התרחיש
+    const { message, thread_id, language, gender, scenario_id } = req.body;
 
-    // שמירת הודעת המשתמש עם מספר התרחיש
     await supabase
       .from('responses')
-      .insert([{ 
-        session_id: thread_id, 
-        role: 'user', 
-        content: message, 
-        language: language,
-        scenario_id: scenario_id // ✅ שמירת מספר התרחיש
-      }]);
+      .insert([{ session_id: thread_id, role: 'user', content: message, language: language, scenario_id: scenario_id }]);
 
     const { reply } = await createThreadAndSendMessage({ message, thread_id, language, gender });
     
-    // שמירת תגובת הבוט עם מספר התרחיש
     if (reply) {
       await supabase
         .from('responses')
-        .insert([{ 
-          session_id: thread_id, 
-          role: 'bot', 
-          content: reply, 
-          language: language,
-          scenario_id: scenario_id // ✅ שמירת מספר התרחיש
-        }]);
+        .insert([{ session_id: thread_id, role: 'bot', content: reply, language: language, scenario_id: scenario_id }]);
     }
     
-    res.json({ reply, thread_id: thread_id });
+    res.json({ reply, thread_id });
   } catch (err) {
     console.error('Error in /chat handler:', err);
     res.status(500).json({ error: 'Something went wrong.' });
@@ -55,15 +44,17 @@ app.post('/scenario', (req, res) => {
     const { thread_id, language } = req.body;
     const result = getNextScenario(thread_id, language);
     if (result && result.scenario) {
-      // ✅ מחזירים עכשיו גם את מזהה התרחיש
       res.json({ scenario: result.scenario, scenarioId: result.scenarioId });
     } else {
       res.status(404).json({ error: 'No scenario found.' });
     }
   } catch (err) {
+    console.error('❌ Error in /scenario handler:', err);
     res.status(500).json({ error: 'Failed to retrieve scenario.' });
   }
 });
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => { /*...*/ });
+app.listen(PORT, () => {
+  console.log(`Original chatbot server running on port ${PORT}`);
+});
